@@ -86,16 +86,16 @@ namespace IdentityService.Application.Commands.Auth
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 Token = refreshToken,
-                ExpiresAt = DateTime.Now.AddDays(refreshTokenExpirationDays),
-                CreatedAt=DateTime.Now,
+                ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+                CreatedAt=DateTime.UtcNow,
                 CreatedByIp=request.IpAddress
             };
 
             await _unitOfWork.RefreshTokens.AddAsync(refreshTokenEntity, cancellationToken);
 
             // Update user's last login timestamp
-            user.LastLoginAt = DateTime.Now;
-            user.UpdatedAt = DateTime.Now;
+            user.LastLoginAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
             await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
 
             // Commit all changes to database
@@ -108,7 +108,7 @@ namespace IdentityService.Application.Commands.Auth
                 UserId: user.Id,
                 UserName: user.Username,
                 Email: user.Email,
-                ExpiresAt: DateTime.Now.AddMinutes(accessTokenExpirationMinutes));
+                ExpiresAt: DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes));
 
             return Result<LoginResponseDto>.Success(response, "Login succesfull");
         }

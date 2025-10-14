@@ -51,9 +51,8 @@ namespace IdentityService.API.Controllers
                 return Unauthorized(result);
             }
 
-            _logger.LogWarning("Login failed for username: {Username} from IP: {IpAddress}",
-                request.username, ipAddress);
-
+            _logger.LogInformation("Successful login for username: {Username} from IP: {IpAddress}",
+                    request.username, ipAddress);
             return Ok(result);
         }
 

@@ -53,8 +53,8 @@ namespace IdentityService.Infrastructure.Data
                 Email = "admin@company.local",
                 PasswordHash = passwordHasher.HashPassword("Admin@123456"),
                 IsActive = true,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             },
             
             // Test operator user (for development)
@@ -65,8 +65,8 @@ namespace IdentityService.Infrastructure.Data
                 Email = "operator@company.local",
                 PasswordHash = passwordHasher.HashPassword("Operator@123456"),
                 IsActive = true,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             },
             
             // Test regular user (for development)
@@ -77,8 +77,8 @@ namespace IdentityService.Infrastructure.Data
                 Email = "user@company.local",
                 PasswordHash = passwordHasher.HashPassword("User@123456"),
                 IsActive = true,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             }
         };
 

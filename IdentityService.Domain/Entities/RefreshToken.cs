@@ -10,9 +10,9 @@
         public string? ReplacedByToken { get; set; }
         public string CreatedByIp { get; set; }=string.Empty;
 
-        public bool IsExpired=>DateTime.Now>=ExpiresAt;
+        public bool IsExpired=>DateTime.UtcNow>=ExpiresAt;
         public bool IsRevoked => RevokedAt != null;
-        public bool IsActive => !IsRevoked && !IsActive;
+        public bool IsActive => !IsRevoked && !IsExpired;
 
         // Navigation property
         public User User { get; set; } = null!;

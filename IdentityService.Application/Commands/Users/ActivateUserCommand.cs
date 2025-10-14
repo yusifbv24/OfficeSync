@@ -24,7 +24,7 @@ namespace IdentityService.Application.Commands.Users
             }
 
             user.IsActive = true;
-            user.UpdatedAt = DateTime.Now;
+            user.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Users.UpdateAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

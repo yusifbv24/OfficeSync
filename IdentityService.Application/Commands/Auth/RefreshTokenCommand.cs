@@ -65,7 +65,7 @@ namespace IdentityService.Application.Commands.Auth
                 _configuraion["Jwt:AccessTokenExpirationMinutes"] ?? "60");
 
             // Revoke old refresh token
-            token.RevokedAt = DateTime.Now;
+            token.RevokedAt = DateTime.UtcNow;
             token.RevokedByIp = request.IpAddress;
             token.ReplacedByToken = newRefreshToken;
             await _unitOfWork.RefreshTokens.UpdateAsync(token, cancellationToken);
@@ -76,8 +76,8 @@ namespace IdentityService.Application.Commands.Auth
                 Id = Guid.NewGuid(),
                 UserId = user.Id,
                 Token = newRefreshToken,
-                ExpiresAt = DateTime.Now.AddDays(refreshTokenExpirationDays),
-                CreatedAt= DateTime.Now,
+                ExpiresAt = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+                CreatedAt= DateTime.UtcNow,
                 CreatedByIp= request.IpAddress
             };
 
@@ -91,7 +91,7 @@ namespace IdentityService.Application.Commands.Auth
                 UserId: user.Id,
                 UserName: user.Username,
                 Email: user.Email,
-                ExpiresAt: DateTime.Now.AddMinutes(accessTokenExpirationMinutes)
+                ExpiresAt: DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes)
             );
 
             return Result<LoginResponseDto>.Success(response, "Token refreshed succesfully");

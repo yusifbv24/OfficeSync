@@ -66,7 +66,7 @@ namespace IdentityService.Application.Commands.Users
 
             // Hash and set the new password
             user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-            user.UpdatedAt = DateTime.Now;
+            user.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Users.AddAsync(user, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

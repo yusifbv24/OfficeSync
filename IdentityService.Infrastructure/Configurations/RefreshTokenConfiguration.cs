@@ -27,11 +27,11 @@ namespace IdentityService.Infrastructure.Configurations
             builder.Property(e => e.CreatedAt)
                    .HasColumnName("created_at")
                    .IsRequired()
-                   .HasColumnType("timestamp without time zone");
+                   .HasColumnType("timestamptz");
 
             builder.Property(e => e.RevokedAt)
                    .HasColumnName("revoked_at")
-                   .HasColumnType("timestamp without time zone");
+                   .HasColumnType("timestamptz");
 
             builder.Property(e => e.RevokedByIp)
                    .HasColumnName("revoked_by_ip")

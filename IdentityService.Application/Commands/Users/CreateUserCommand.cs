@@ -79,8 +79,8 @@ namespace IdentityService.Application.Commands.Users
                 Email = request.Email,
                 PasswordHash = _passwordHasher.HashPassword(request.Password),
                 IsActive = true,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.Users.AddAsync(user, cancellationToken);

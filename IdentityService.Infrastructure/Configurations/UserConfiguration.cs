@@ -38,16 +38,16 @@ namespace IdentityService.Infrastructure.Configurations
             builder.Property(x => x.CreatedAt)
                    .HasColumnName("created_at")
                    .IsRequired()
-                   .HasColumnType("timestamp without time zone");
+                   .HasColumnType("timestamptz");
 
             builder.Property(x => x.UpdatedAt)
                    .HasColumnName("updated_at")
                    .IsRequired()
-                   .HasColumnType("timestamp without time zone");
+                   .HasColumnType("timestamptz");
 
             builder.Property(x => x.LastLoginAt)
                    .HasColumnName("last_login_at")
-                   .HasColumnType("timestamp without time zone");
+                   .HasColumnType("timestamptz");
 
 
             // Indexes

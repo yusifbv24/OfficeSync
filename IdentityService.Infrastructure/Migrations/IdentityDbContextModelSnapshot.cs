@@ -30,7 +30,7 @@ namespace IdentityService.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
                     b.Property<string>("CreatedByIp")
@@ -48,7 +48,7 @@ namespace IdentityService.Infrastructure.Migrations
                         .HasColumnName("replaced_by_token");
 
                     b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("revoked_at");
 
                     b.Property<string>("RevokedByIp")
@@ -91,7 +91,7 @@ namespace IdentityService.Infrastructure.Migrations
                         .HasColumnName("id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
                     b.Property<string>("Email")
@@ -107,7 +107,7 @@ namespace IdentityService.Infrastructure.Migrations
                         .HasColumnName("is_active");
 
                     b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("last_login_at");
 
                     b.Property<string>("PasswordHash")
@@ -117,7 +117,7 @@ namespace IdentityService.Infrastructure.Migrations
                         .HasColumnName("password_hash");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp without time zone")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("updated_at");
 
                     b.Property<string>("Username")

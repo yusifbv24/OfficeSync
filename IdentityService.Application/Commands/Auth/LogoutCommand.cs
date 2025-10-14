@@ -28,7 +28,7 @@ namespace IdentityService.Application.Commands.Auth
             // Revoke each token
             foreach(var token in tokens)
             {
-                token.RevokedAt = DateTime.Now;
+                token.RevokedAt = DateTime.UtcNow;
                 token.RevokedByIp = "system";
                 await _unitOfWork.RefreshTokens.UpdateAsync(token, cancellationToken);
             }

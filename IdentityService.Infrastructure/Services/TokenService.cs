@@ -53,7 +53,7 @@ public class TokenService : ITokenService
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
-            new(JwtRegisteredClaimNames.Iat, DateTime.Now.ToString()) // Issued at
+            new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()) // Issued at
         };
 
         // Create the signing key from our secret
@@ -65,7 +65,7 @@ public class TokenService : ITokenService
             issuer: _issuer,
             audience: _audience,
             claims: claims,
-            expires: DateTime.Now.AddMinutes(_accessTokenExpirationMinutes),
+            expires: DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes),
             signingCredentials: credentials
         );
 
