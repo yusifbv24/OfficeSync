@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/IdentityService/">
+    <Project Path="IdentityService.API/IdentityService.API.csproj" Id="4ad85810-78f1-4925-b12a-d679d47d1bba" />
+    <Project Path="IdentityService.Application/IdentityService.Application.csproj" />
+    <Project Path="IdentityService.Domain/IdentityService.Domain.csproj" />
+    <Project Path="IdentityService.Infrastructure/IdentityService.Infrastructure.csproj" />
+  </Folder>
+</Solution>
