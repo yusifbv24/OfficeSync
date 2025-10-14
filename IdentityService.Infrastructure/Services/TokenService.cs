@@ -53,7 +53,7 @@ public class TokenService : ITokenService
             new(ClaimTypes.Name, user.Username),
             new(ClaimTypes.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Unique token ID
-            new(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString()) // Issued at
+            new(JwtRegisteredClaimNames.Iat, new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64) // Issued at (Unix time)
         };
 
         // Create the signing key from our secret
@@ -73,6 +73,9 @@ public class TokenService : ITokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+
+
+
     /// <summary>
     /// Generate a refresh token.
     /// Unlike JWTs, refresh tokens are completely random and stored in the database.
@@ -88,6 +91,9 @@ public class TokenService : ITokenService
         // Convert to Base64 string for easy transmission
         return Convert.ToBase64String(randomNumber);
     }
+
+
+
 
     /// <summary>
     /// Validate a JWT token and extract the user ID.

@@ -5,5 +5,7 @@
     <Project Path="IdentityService.Application/IdentityService.Application.csproj" />
     <Project Path="IdentityService.Domain/IdentityService.Domain.csproj" />
     <Project Path="IdentityService.Infrastructure/IdentityService.Infrastructure.csproj" />
+    <Project Path="IdentityService.IntegrationTests/IdentityService.IntegrationTests.csproj" Id="2efe4ff9-bac1-450d-b949-f18b3b1df81d" />
+    <Project Path="IdentityService.UnitTests/IdentityService.UnitTests.csproj" Id="b7d0d048-f8ab-4b71-909b-02873b1e612c" />
   </Folder>
 </Solution>
