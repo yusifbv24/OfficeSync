@@ -6,4 +6,10 @@
     <Project Path="IdentityService.Domain/IdentityService.Domain.csproj" />
     <Project Path="IdentityService.Infrastructure/IdentityService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Services/UserManagementService/">
+    <Project Path="UserManagementService.API/UserManagementService.API.csproj" Id="cf0e63b0-a5d2-498d-9023-6184a935a0cf" />
+    <Project Path="UserManagementService.Application/UserManagementService.Application.csproj" Id="f3512edc-d638-42b7-b9b4-3e96cf10fbc4" />
+    <Project Path="UserManagementService.Domain/UserManagementService.Domain.csproj" Id="d1795d39-848b-4668-b6c5-bd31c88fda63" />
+    <Project Path="UserManagementService.Infrastructure/UserManagementService.Infrastructure.csproj" Id="aadb4561-e484-4c62-8ab3-00ccb7bd2ddc" />
+  </Folder>
 </Solution>
