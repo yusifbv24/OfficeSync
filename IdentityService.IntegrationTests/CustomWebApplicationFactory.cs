@@ -29,7 +29,8 @@ namespace IdentityService.IntegrationTests
                     ["Jwt:Issuer"] = "TestIssuer",
                     ["Jwt:Audience"] = "TestAudience",
                     ["Jwt:AccessTokenExpirationMinutes"] = "60",
-                    ["Jwt:RefreshTokenExpirationDays"] = "7"
+                    ["Jwt:RefreshTokenExpirationDays"] = "7",
+                    ["Serilog:WriteTo:1:Name"] = "Console"
                 });
             });
 
@@ -75,6 +76,7 @@ namespace IdentityService.IntegrationTests
                     throw;
                 }
             });
+
             base.ConfigureWebHost(builder);
         }
 
