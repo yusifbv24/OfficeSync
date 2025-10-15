@@ -20,7 +20,8 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File(
         "logs/identity-service-.txt",
         rollingInterval: RollingInterval.Day,
-        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        shared: true) // ADD THIS - allows multiple processes to write
     .CreateLogger();
 
 try
@@ -216,6 +217,28 @@ try
         {
             Log.Fatal(ex, "An error occurred while initializing the database");
             throw;
+        }
+    }
+
+    // Only initialize database if not in Testing environment
+    if (!app.Environment.IsEnvironment("Testing"))
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            try
+            {
+                var context = services.GetRequiredService<IdentityDbContext>();
+                var passwordHasher = services.GetRequiredService<IPasswordHasher>();
+                var logger = services.GetRequiredService<ILogger<Program>>();
+
+                await DbInitializer.InitializeAsync(context, passwordHasher, logger);
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "An error occurred while initializing the database");
+                throw;
+            }
         }
     }
 
