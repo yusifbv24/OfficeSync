@@ -1,6 +1,8 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
 using UserManagementService.Application.Common;
 using UserManagementService.Application.DTOs.Users;
+using UserManagementService.Application.Interfaces;
 
 namespace UserManagementService.Application.Commands.Users
 {
@@ -14,6 +16,20 @@ namespace UserManagementService.Application.Commands.Users
         string? AvatarUrl,
         string? Notes
     ) : IRequest<Result<UserProfileDto>>;
+
+
+    public class UpdateUserCommandValidator : AbstractValidator<UpdateUserCommand>
+    {
+        public UpdateUserCommandValidator()
+        {
+            When(x => !string.IsNullOrWhiteSpace(x.DisplayName), () =>
+            {
+                RuleFor(x => x.DisplayName)
+                    .MinimumLength(2).WithMessage("Display name must be at least 2 characters")
+                    .MaximumLength(100).WithMessage("Display name must not exceed 100 characters");
+            });
+        }
+    }
 
 
     public class UpdateUserCommandHandler:IRequestHandler<UpdateUserCommand, Result<UserProfileDto>>

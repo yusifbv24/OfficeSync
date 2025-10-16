@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using UserManagementService.Application.Common;
+using UserManagementService.Application.Interfaces;
 
 namespace UserManagementService.Application.Commands.Permissions
 {

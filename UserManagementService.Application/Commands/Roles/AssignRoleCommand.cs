@@ -1,6 +1,8 @@
-﻿using MediatR;
+﻿using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using UserManagementService.Application.Common;
+using UserManagementService.Application.Interfaces;
 using UserManagementService.Domain.Entities;
 using UserManagementService.Domain.Enums;
 
@@ -16,6 +18,22 @@ namespace UserManagementService.Application.Commands.Roles
         Guid AssignedBy,
         string? Reason
     ) : IRequest<Result<bool>>;
+
+
+    public class AssignRoleCommandValidator:AbstractValidator<AssignRoleCommand>
+    {
+        public AssignRoleCommandValidator()
+        {
+            RuleFor(x=>x.UserProfileId)
+                .NotEmpty().WithMessage("UserProfileId is required.");
+
+            RuleFor(x => x.Role)
+                .IsInEnum().WithMessage("Invalid role specified");
+
+            RuleFor(x => x.AssignedBy)
+                .NotEmpty().WithMessage("AssignedBy is required");
+        }
+    }
 
 
     public class AssignRoleCommandHandler:IRequestHandler<AssignRoleCommand, Result<bool>>
