@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using FluentValidation;
+﻿using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using UserManagementService.Application.Common;
@@ -63,17 +62,14 @@ namespace UserManagementService.Application.Commands.Users
         private readonly IUnitOfWork _unitOfWork;
         private readonly IIdentityServiceClient _identityServiceClient;
         private readonly ILogger<CreateUserCommanHandler> _logger;
-        private readonly IMapper _mapper;
 
 
         public CreateUserCommanHandler(
             IUnitOfWork unitOfWork, 
-            IMapper mapper,
             IIdentityServiceClient identityServiceClient, 
             ILogger<CreateUserCommanHandler> logger)
         {
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
             _identityServiceClient = identityServiceClient;
             _logger = logger;
         }
@@ -132,7 +128,23 @@ namespace UserManagementService.Application.Commands.Users
                     userProfile.DisplayName);
 
             // Map to DTO
-            var dto=_mapper.Map<UserProfileDto>(userProfile);
+            var dto = new UserProfileDto(
+                    Id: userProfile.Id,
+                    UserId: userProfile.UserId,
+                    DisplayName: userProfile.DisplayName,
+                    AvatarUrl: userProfile.AvatarUrl,
+                    Status: userProfile.Status,
+                    CreatedAt: userProfile.CreatedAt,
+                    UpdatedAt: userProfile.UpdatedAt,
+                    LastSeenAt: userProfile.LastSeenAt,
+                    CreatedBy: userProfile.CreatedBy,
+                    Notes: userProfile.Notes,
+                    Role: null,
+                    RoleAssignedAt: null,
+                    RoleAssignedBy: null,
+                    Permissions: null
+                );
+
             return Result<UserProfileDto>.Success(dto, "User created successfully");
         }
     }

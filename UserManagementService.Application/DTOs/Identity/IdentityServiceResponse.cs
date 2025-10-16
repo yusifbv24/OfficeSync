@@ -1,8 +1,4 @@
 ﻿namespace UserManagementService.Application.DTOs.Identity
 {
-    public record IdentityServiceResponse
-    {
-        public bool IsSuccess;
-        public IdentityUserData? Data;
-    }
+    public record IdentityServiceResponse(bool IsSuccess,IdentityUserData? Data);
 }

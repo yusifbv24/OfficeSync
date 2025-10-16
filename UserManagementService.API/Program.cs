@@ -10,8 +10,8 @@ using System.Text;
 using System.Text.Json.Serialization;
 using UserManagementService.Application.Behaviors;
 using UserManagementService.Application.Interfaces;
-using UserManagementService.Application.Mappings;
 using UserManagementService.Infrastructure.Data;
+using UserManagementService.Infrastructure.HttpClients;
 using UserManagementService.Infrastructure.Repositories;
 
 // Configure Serilog
@@ -126,16 +126,6 @@ try
 
     builder.Services.AddAuthorization();
 
-
-
-    builder.Services.AddAutoMapper(cfg =>
-    {
-        cfg.AddProfile<MappingProfile>();
-        // Add other profiles or custom configuration
-    }, typeof(MappingProfile).Assembly);
-
-
-
     builder.Services.AddMediatR(cfg =>
     {
         cfg.RegisterServicesFromAssembly(
@@ -150,7 +140,7 @@ try
 
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-    builder.Services.AddHttpClient<IIdentityServiceClient, IIdentityServiceClient>();
+    builder.Services.AddHttpClient<IIdentityServiceClient, IdentityServiceClient>();
     builder.Services.AddHttpContextAccessor();
 
 

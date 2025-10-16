@@ -126,7 +126,7 @@ namespace UserManagementService.Infrastructure.HttpClients
             try
             {
                 var response = await _httpClient.PutAsync(
-                    $"/api/internal/users/{userId}/deactivate",
+                    $"/api/auth/users/{userId}/deactivate",
                     null,
                     cancellationToken);
 
@@ -166,7 +166,7 @@ namespace UserManagementService.Infrastructure.HttpClients
             try
             {
                 var response = await _httpClient.GetAsync(
-                    $"/api/internal/users/{userId}",
+                    $"/api/auth/users/{userId}",
                     cancellationToken);
 
                 return Result<bool>.Success(response.IsSuccessStatusCode);

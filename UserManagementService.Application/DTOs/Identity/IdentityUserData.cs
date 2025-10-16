@@ -1,9 +1,4 @@
 ﻿namespace UserManagementService.Application.DTOs.Identity
 {
-    public record IdentityUserData
-    {
-        public Guid Id;
-        public string Username;
-        public string Email;
-    }
+    public record IdentityUserData(Guid Id, string Username,string Email);
 }
