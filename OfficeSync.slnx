@@ -1,5 +1,11 @@
 <Solution>
   <Folder Name="/Services/" />
+  <Folder Name="/Services/ChannelService/">
+    <Project Path="ChannelService.API/ChannelService.API.csproj" Id="2957fd64-aeec-4dd0-8bf9-fafc614866bb" />
+    <Project Path="ChannelService.Application/ChannelService.Application.csproj" Id="acba1366-cf46-4033-b1be-9b6262e41b4e" />
+    <Project Path="ChannelService.Domain/ChannelService.Domain.csproj" Id="c415bcae-2d8c-44a2-b4c1-4ac864c198f5" />
+    <Project Path="ChannelService.Infrastructure/ChannelService.Infrastructure.csproj" Id="efef52fd-af18-484c-8f73-85059fd01db3" />
+  </Folder>
   <Folder Name="/Services/IdentityService/">
     <Project Path="IdentityService.API/IdentityService.API.csproj" Id="4ad85810-78f1-4925-b12a-d679d47d1bba" />
     <Project Path="IdentityService.Application/IdentityService.Application.csproj" />

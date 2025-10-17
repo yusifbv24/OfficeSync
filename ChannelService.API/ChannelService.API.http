@@ -1,0 +1,6 @@
+@ChannelService.API_HostAddress = http://localhost:5164
+
+GET {{ChannelService.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

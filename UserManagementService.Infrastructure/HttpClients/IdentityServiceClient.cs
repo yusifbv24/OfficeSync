@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using UserManagementService.Application.Common;
@@ -18,14 +20,16 @@ namespace UserManagementService.Infrastructure.HttpClients
         private readonly HttpClient _httpClient;
         private readonly ILogger<IdentityServiceClient> _logger;
         private readonly JsonSerializerOptions _jsonOptions;
-
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public IdentityServiceClient(
             HttpClient httpClient, 
             IConfiguration configuration,
+            IHttpContextAccessor httpContextAccessor,
             ILogger<IdentityServiceClient> logger)
         {
             _httpClient = httpClient;
+            _httpContextAccessor= httpContextAccessor;
             _logger = logger;
 
             // Configure the HttpClient base address 
@@ -60,6 +64,8 @@ namespace UserManagementService.Infrastructure.HttpClients
                     email,
                     password
                 };
+
+                await AddAuthorizationHeaderAsync();
 
                 var response = await _httpClient.PostAsJsonAsync(
                     "api/auth/register",
@@ -125,6 +131,8 @@ namespace UserManagementService.Infrastructure.HttpClients
         {
             try
             {
+                await AddAuthorizationHeaderAsync();
+
                 var response = await _httpClient.PutAsync(
                     $"/api/auth/users/{userId}/deactivate",
                     null,
@@ -165,6 +173,8 @@ namespace UserManagementService.Infrastructure.HttpClients
         {
             try
             {
+                await AddAuthorizationHeaderAsync();
+
                 var response = await _httpClient.GetAsync(
                     $"/api/auth/users/{userId}",
                     cancellationToken);
@@ -175,6 +185,18 @@ namespace UserManagementService.Infrastructure.HttpClients
             {
                 _logger?.LogError(ex, "Error checking if user exists in IdentityService");
                 return Result<bool>.Failure("Error checking user existence");
+            }
+        }
+
+
+
+        private async Task AddAuthorizationHeaderAsync()
+        {
+            var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(authHeader))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", authHeader.Replace("Bearer ", ""));
             }
         }
     }
