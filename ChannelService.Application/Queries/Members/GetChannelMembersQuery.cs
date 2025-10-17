@@ -39,11 +39,12 @@ namespace ChannelService.Application.Queries.Members
                 return Result<List<ChannelMemberDto>>.Failure("Access denied");
 
             // Get active members using IQueryable
-            var members = await _unitOfWork.ChannelMembers
+            var query = _unitOfWork.ChannelMembers
                 .GetQueryable()
                 .Where(m => m.ChannelId == request.ChannelId && !m.IsRemoved)
-                .OrderBy(m => m.JoinedAt)
-                .ToListAsync(cancellationToken);
+                .OrderBy(m => m.JoinedAt);
+
+            var members = _unitOfWork.ChannelMembers.ToListAsync(query, cancellationToken);
 
             var dtos = _mapper.Map<List<ChannelMemberDto>>(members);
 

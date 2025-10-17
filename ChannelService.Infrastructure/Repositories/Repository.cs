@@ -1,4 +1,5 @@
 ﻿using ChannelService.Application.Interfaces;
+using ChannelService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -38,9 +39,9 @@ namespace ChannelService.Infrastructure.Repositories
 
 
 
-        public IQueryable<T> Find(Expression<Func<T,bool>> predicate)
+        public IQueryable<T> Find(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
         {
-            return _dbSet.Where(predicate);
+            return _dbSet.Where(predicate,cancellationToken);
         }
 
 
@@ -83,6 +84,23 @@ namespace ChannelService.Infrastructure.Repositories
             return predicate==null
                 ? await _dbSet.CountAsync(cancellationToken)
                 : await _dbSet.CountAsync(predicate, cancellationToken);
+        }
+
+
+        public async Task<int> CountAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        {
+            return await query.CountAsync(cancellationToken);
+        }
+
+
+        public async Task<List<T>> ToListAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        {
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public async Task<T?> FirstOrDefaultAsync(IQueryable<T> query, CancellationToken cancellationToken = default)
+        {
+            return await query.FirstOrDefaultAsync(cancellationToken);
         }
     }
 }

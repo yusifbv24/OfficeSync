@@ -3,6 +3,7 @@ using ChannelService.Application.Channels;
 using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChannelService.Application.Queries.Channels
 {
@@ -39,12 +40,13 @@ namespace ChannelService.Application.Queries.Channels
                 .Where(c => c.Members.Any(m => m.UserId == request.UserId && !m.IsRemoved))
                 .OrderByDescending(c => c.UpdatedAt);
 
-            var totalCount=await query.CountAsync(cancellationToken);
+            var totalCount = await _unitOfWork.Channels.CountAsync(query, cancellationToken);
 
-            var channels = await query
+            var pagedQuery = query
                 .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync(cancellationToken);
+                .Take(request.PageSize);
+
+            var channels = await _unitOfWork.Channels.CountAsync(pagedQuery, cancellationToken);
 
             var dtos = _mapper.Map<List<ChannelListDto>>(channels);
 

@@ -1,5 +1,6 @@
 ﻿using ChannelService.Application.Interfaces;
 using ChannelService.Domain.Entities;
+using ChannelService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ChannelService.Infrastructure.Repositories
@@ -26,7 +27,7 @@ namespace ChannelService.Infrastructure.Repositories
 
         public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
-            _transaction=await _context.BeginTransactionAsync(cancellationToken);
+            _transaction=await _context.Database.BeginTransactionAsync(cancellationToken);
         }
 
 

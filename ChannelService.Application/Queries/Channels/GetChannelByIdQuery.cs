@@ -4,6 +4,7 @@ using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
 using ChannelService.Domain.Enums;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChannelService.Application.Queries.Channels
 {
@@ -35,10 +36,11 @@ namespace ChannelService.Application.Queries.Channels
             CancellationToken cancellationToken)
         {
             // Use IQueryable to build query with deferred execution
-            var channel = await _unitOfWork.Channels
+            var query = _unitOfWork.Channels
                 .GetQueryable()
-                .Where(c => c.Id == request.ChannelId)
-                .FirstOrDefaultAsync(cancellationToken);
+                .Where(c => c.Id == request.ChannelId);
+
+            var channel = await _unitOfWork.Channels.FirstOrDefaultAsync(query, cancellationToken);
 
             if (channel == null)
                 return Result<ChannelDto>.Failure("Channel not found");

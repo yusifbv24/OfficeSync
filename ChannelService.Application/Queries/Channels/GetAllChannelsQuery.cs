@@ -4,6 +4,7 @@ using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
 using ChannelService.Domain.Enums;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChannelService.Application.Queries.Channels
 {
@@ -55,17 +56,17 @@ namespace ChannelService.Application.Queries.Channels
             query = query.OrderByDescending(c => c.CreatedAt);
 
             // Get total count - single database query
-            var totalCount = await query.CountAsync(cancellationToken);
+            var totalCount = await _unitOfWork.Channels.CountAsync(query, cancellationToken);
 
             // Apply pagination
-            var pagedQuery = query  
+            var pagedQuery = query
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize);
 
             // Execute query - Now the database is hit with optimized SQL
-            var channels = await pagedQuery.ToListAsync(cancellationToken);
+            var channels = await _unitOfWork.Channels.ToListAsync(pagedQuery,cancellationToken);
 
-            var dtos = _mapper.Map<ChannelListDto>(channels);
+            var dtos = _mapper.Map<List<ChannelListDto>>(channels);
 
             var pagedResult = PagedResult<ChannelListDto>.Create(
                 dtos,

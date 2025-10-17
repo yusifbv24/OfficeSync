@@ -12,6 +12,11 @@ namespace ChannelService.Application.Interfaces
         Task UpdateAsync(T entity, CancellationToken cancellationToken=default);
         Task DeleteAsync(T entity,CancellationToken cancellationToken=default);
         Task<bool> ExistsAsync(Expression<Func<T,bool>> predicate,CancellationToken cancellationToken=default);
-        Task<bool> CountAsync(Expression<Func<T,bool>> predicate, CancellationToken cancellationToken=default);
+        Task<int> CountAsync(Expression<Func<T,bool>> predicate, CancellationToken cancellationToken=default);
+
+
+        Task<int> CountAsync(IQueryable<T> query, CancellationToken cancellationToken=default);
+        Task<List<T>> ToListAsync(IQueryable<T> query, CancellationToken cancellationToken = default);
+        Task<T?> FirstOrDefaultAsync(IQueryable<T> query, CancellationToken cancellationToken = default);
     }
 }

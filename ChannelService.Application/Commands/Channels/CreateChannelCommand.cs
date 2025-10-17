@@ -1,4 +1,5 @@
-﻿using ChannelService.Application.Channels;
+﻿using AutoMapper;
+using ChannelService.Application.Channels;
 using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
 using ChannelService.Domain.Entities;
@@ -43,13 +44,16 @@ namespace ChannelService.Application.Commands.Channels
     public class CreateChannelCommandHandler:IRequestHandler<CreateChannelCommand, Result<ChannelDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
         private readonly ILogger<CreateChannelCommandHandler> _logger;
 
         public CreateChannelCommandHandler(
             IUnitOfWork unitOfWork,
+            IMapper mapper,
             ILogger<CreateChannelCommandHandler> logger)
         {
             _unitOfWork=unitOfWork;
+            _mapper=mapper;
             _logger=logger;
         }
 
@@ -97,17 +101,7 @@ namespace ChannelService.Application.Commands.Channels
 
 
                 // Map to DTO
-                var dto = new ChannelDto(
-                    Id: channel.Id,
-                    Name: channel.Name,
-                    Description: channel.Description,
-                    Type: channel.Type,
-                    IsArchived: channel.IsArchived,
-                    CreatedBy: channel.CreatedBy,
-                    CreatedAt: channel.CreatedAt,
-                    UpdatedAt: channel.UpdatedAt,
-                    MemberCount: channel.Members.Count);
-
+                var dto = _mapper.Map<ChannelDto>(channel);
 
                 return Result<ChannelDto>.Success(dto, "Channel created succesfully");
             }

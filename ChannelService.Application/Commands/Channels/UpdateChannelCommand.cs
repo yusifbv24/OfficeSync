@@ -1,4 +1,5 @@
-﻿using ChannelService.Application.Channels;
+﻿using AutoMapper;
+using ChannelService.Application.Channels;
 using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
 using ChannelService.Domain.Enums;
@@ -39,9 +40,11 @@ namespace ChannelService.Application.Commands.Channels
     public class UpdateChannelCommandHandler : IRequestHandler<UpdateChannelCommand, Result<ChannelDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        public UpdateChannelCommandHandler(IUnitOfWork unitOfWork)
+        private readonly IMapper _mapper;
+        public UpdateChannelCommandHandler(IUnitOfWork unitOfWork,IMapper mapper)
         {
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
 
@@ -68,16 +71,7 @@ namespace ChannelService.Application.Commands.Channels
             await _unitOfWork.Channels.UpdateAsync(channel, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var dto = new ChannelDto(
-                Id: channel.Id,
-                Name: channel.Name,
-                Description: channel.Description,
-                Type: channel.Type,
-                IsArchived: channel.IsArchived,
-                CreatedBy: channel.CreatedBy,
-                CreatedAt: channel.CreatedAt,
-                UpdatedAt: channel.UpdatedAt,
-                MemberCount: channel.Members.Count(m => !m.IsRemoved));
+            var dto = _mapper.Map<ChannelDto>(channel);
 
             return Result<ChannelDto>.Success(dto, "Channel updated succesfully");
         }
