@@ -5,8 +5,15 @@ namespace ChannelService.Application.Interfaces
     public interface IRepository<T> where T : class
     {
         Task<T?> GetByIdAsync(Guid id,CancellationToken cancellationToken);
+
+        Task<T?> GetByIdWithIncludesAsync(
+            Guid id,
+            CancellationToken cancellationToken,
+            params Expression<Func<T, object>>[] includes);
+
         IQueryable<T> GetQueryable();
         Task<T?> GetFirstOrDefaultAsync(Expression<Func<T,bool>> predicate, CancellationToken cancellationToken);
+
         IQueryable<T> Find(Expression<Func<T, bool>> predicate);
         Task<T> AddAsync(T entity,CancellationToken cancellationToken=default);
         Task UpdateAsync(T entity, CancellationToken cancellationToken=default);

@@ -49,7 +49,11 @@ namespace ChannelService.Application.Commands.Members
         {
             try
             {
-                var channel = await _unitOfWork.Channels.GetByIdAsync(request.ChannelId, cancellationToken);
+                var channel = await _unitOfWork.Channels.GetByIdWithIncludesAsync(
+                    request.ChannelId, 
+                    cancellationToken,
+                    c=>c.Members);
+
                 if (channel == null)
                     return Result<bool>.Failure("Channel not found");
 

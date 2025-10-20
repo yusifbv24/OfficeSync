@@ -30,7 +30,11 @@ namespace ChannelService.Application.Queries.Members
             GetChannelMembersQuery request,
             CancellationToken cancellationToken)
         {
-            var channel = await _unitOfWork.Channels.GetByIdAsync(request.ChannelId, cancellationToken);
+            var channel = await _unitOfWork.Channels.GetByIdWithIncludesAsync(
+                    request.ChannelId,
+                    cancellationToken,
+                    c => c.Members);
+
             if (channel == null)
                 return Result<List<ChannelMemberDto>>.Failure("Channel not found");
 
@@ -44,7 +48,7 @@ namespace ChannelService.Application.Queries.Members
                 .Where(m => m.ChannelId == request.ChannelId && !m.IsRemoved)
                 .OrderBy(m => m.JoinedAt);
 
-            var members = _unitOfWork.ChannelMembers.ToListAsync(query, cancellationToken);
+            var members = await _unitOfWork.ChannelMembers.ToListAsync(query, cancellationToken);
 
             var dtos = _mapper.Map<List<ChannelMemberDto>>(members);
 

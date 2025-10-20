@@ -50,9 +50,10 @@ namespace ChannelService.Application.Commands.Members
         {
             try
             {
-                var channel = await _unitOfWork.Channels.GetByIdAsync(
+                var channel = await _unitOfWork.Channels.GetByIdWithIncludesAsync(
                     request.ChannelId,
-                    cancellationToken);
+                    cancellationToken,
+                    c => c.Members);
 
                 if (channel == null)
                 {

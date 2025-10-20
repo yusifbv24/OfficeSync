@@ -52,7 +52,11 @@ namespace ChannelService.Application.Commands.Channels
             UpdateChannelCommand request,
             CancellationToken cancellationToken)
         {
-            var channel = await _unitOfWork.Channels.GetByIdAsync(request.ChannelId, cancellationToken);
+            var channel = await _unitOfWork.Channels.GetByIdWithIncludesAsync(
+                request.ChannelId, 
+                cancellationToken, 
+                c => c.Members);
+
             if (channel == null)
                 return Result<ChannelDto>.Failure("Channel not found");
 
