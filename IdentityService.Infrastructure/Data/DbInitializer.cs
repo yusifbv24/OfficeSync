@@ -48,7 +48,7 @@ namespace IdentityService.Infrastructure.Data
         {
             // Default admin user
             new() {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
                 Username = "admin",
                 Email = "admin@company.local",
                 PasswordHash = passwordHasher.HashPassword("Admin@123456"),
@@ -60,7 +60,7 @@ namespace IdentityService.Infrastructure.Data
             // Test operator user (for development)
             new()
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
                 Username = "operator",
                 Email = "operator@company.local",
                 PasswordHash = passwordHasher.HashPassword("Operator@123456"),
@@ -72,7 +72,7 @@ namespace IdentityService.Infrastructure.Data
             // Test regular user (for development)
             new()
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
                 Username = "testuser",
                 Email = "user@company.local",
                 PasswordHash = passwordHasher.HashPassword("User@123456"),

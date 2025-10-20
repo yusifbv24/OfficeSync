@@ -5,11 +5,13 @@ namespace ChannelService.Application.Channels
     /// <summary>
     /// Simplified channel information for list views.
     /// </summary>
-    public record ChannelListDto(
-        Guid Id,
-        string Name,
-        ChannelType Type,
-        bool IsArchived,
-        int MemberCount,
-        DateTime CreatedAt);
+    public record ChannelListDto
+    {
+        public Guid Id { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public ChannelType Type { get; init; }
+        public bool IsArchived { get; init; }
+        public int MemberCount { get; init; }
+        public DateTime CreatedAt { get; init; }
+    }
 }
