@@ -1,6 +1,7 @@
 ﻿using ChannelService.Application.Channels;
 using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
+using FluentValidation;
 using MediatR;
 
 namespace ChannelService.Application.Commands.Channels
@@ -11,6 +12,19 @@ namespace ChannelService.Application.Commands.Channels
     public record ArchiveChannelCommand(
         Guid ChannelId,
         Guid ArchivedBy):IRequest<Result<bool>>;
+
+
+    public class ArchiveChannelCommandValidator : AbstractValidator<ArchiveChannelCommand>
+    {
+        public ArchiveChannelCommandValidator()
+        {
+            RuleFor(x => x.ChannelId)
+                .NotEmpty().WithMessage("ChannelId is required");
+
+            RuleFor(x => x.ArchivedBy)
+                .NotEmpty().WithMessage("ArchivedBy is required");
+        }
+    }
 
 
     public class ArchiveChannelCommandHandler: IRequestHandler<ArchiveChannelCommand, Result<bool>>

@@ -49,7 +49,8 @@ namespace ChannelService.Domain.Entities
                 Type = type,
                 CreatedBy = createdBy,
                 Description = description,
-                IsArchived = false
+                IsArchived = false,
+                CreatedAt= DateTime.UtcNow
             };
 
             // Automatically add creator as owner

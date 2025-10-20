@@ -58,7 +58,7 @@ namespace ChannelService.Infrastructure.Data
 
             // Create random channel
             var randomChannel = Channel.Create(
-                name: ChannelName.Create("Random")
+                name: ChannelName.Create("Random"),
                 type: ChannelType.Public,
                 createdBy: adminUserId,
                 description: "Off-topic discussions and casual conversations");

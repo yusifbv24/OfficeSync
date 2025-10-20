@@ -39,9 +39,9 @@ namespace ChannelService.Infrastructure.Repositories
 
 
 
-        public IQueryable<T> Find(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
+        public IQueryable<T> Find(Expression<Func<T, bool>> predicate)
         {
-            return _dbSet.Where(predicate,cancellationToken);
+            return _dbSet.Where(predicate);
         }
 
 

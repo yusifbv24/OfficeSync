@@ -1,5 +1,6 @@
 ﻿using ChannelService.Application.Common;
 using ChannelService.Application.Interfaces;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +13,21 @@ namespace ChannelService.Application.Commands.Members
         Guid ChannelId,
         Guid UserId,
         Guid RemovedBy):IRequest<Result<bool>>;
+
+    public class RemoveMemberCommandValidator : AbstractValidator<RemoveMemberCommand>
+    {
+        public RemoveMemberCommandValidator()
+        {
+            RuleFor(x => x.ChannelId)
+                .NotEmpty().WithMessage("ChannelId is required");
+
+            RuleFor(x => x.UserId)
+                .NotEmpty().WithMessage("UserId is required");
+
+            RuleFor(x => x.RemovedBy)
+                .NotEmpty().WithMessage("RemovedBy is required");
+        }
+    }
 
 
     public class RemoveMemberCommandHandler:IRequestHandler<RemoveMemberCommand, Result<bool>>

@@ -138,6 +138,135 @@ namespace ChannelService.API.Controllers
 
 
 
+        /// <summary>
+        /// Get channels where the user is a member.
+        /// </summary>
+        [HttpGet("my-channels")]
+        [ProducesResponseType(typeof(ChannelListDto),StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMyChannels(
+            [FromQuery] int pageNumber=1,
+            [FromQuery] int pageSize=20,
+            CancellationToken cancellationToken = default)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if(string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim,out var userId))
+            {
+                return Unauthorized(new { Message = "Invalid token" });
+            }
 
+            var query = new GetUserChannelsQuery(
+                UserId: userId,
+                PageNumber: pageNumber,
+                PageSize: pageSize);
+
+            var result=await _mediator.Send(query,cancellationToken);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
+
+
+
+        /// <summary>
+        /// Update channel information
+        /// Only channel owners can update
+        /// </summary>
+        [HttpPut("{id:guid}")]
+        [ProducesResponseType(typeof(ChannelDto),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateChannel(
+            Guid id,
+            [FromBody] UpdateChannelRequestDto request,
+            CancellationToken cancellationToken)
+        {
+            var updatedByIdClaim=User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(updatedByIdClaim) || !Guid.TryParse(updatedByIdClaim, out var updatedById))
+            {
+                return BadRequest(new { Message = "Invalid token" });
+            }
+
+            var command = new UpdateChannelCommand(
+                ChannelId: id,
+                Name: request.Name,
+                Description: request.Description,
+                UpdatedBy: updatedById);
+
+            var result= await _mediator.Send(command,cancellationToken);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+            _logger.LogInformation("Channel {ChannelId} updated by {UpdatedBy}", id, updatedById);
+            return Ok(result);
+        }
+
+
+
+        /// <summary>
+        /// Archive a channel.
+        /// Only channel owners can archive.
+        /// </summary>
+        [HttpPut("{id:guid}/archive")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ArchiveChannel(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var archivedByIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if(string.IsNullOrEmpty(archivedByIdClaim) || !Guid.TryParse(archivedByIdClaim, out var archivedById))
+            {
+                return Unauthorized(new { Message = "Invalid token" });
+            }
+
+            var command = new ArchiveChannelCommand(
+                ChannelId: id,
+                ArchivedBy: archivedById);
+
+            var result=await _mediator.Send(command, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            _logger.LogInformation("Channel {ChannelId} archived by {ArchivedBy}", id, archivedById);
+
+            return Ok(result);
+        }
+
+
+
+        /// <summary>
+        /// Unarchive a channel.
+        /// Only channel owners can unarchive.
+        /// </summary>
+        [HttpPut("{id:guid}/unarchive")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> UnarchiveChannel(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var unarchivedByIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if(string.IsNullOrEmpty(unarchivedByIdClaim) || !Guid.TryParse(unarchivedByIdClaim,out var unarchivedById))
+            {
+                return Unauthorized(new { Message = "Invalid token" });
+            }
+
+            var command = new UnarchiveChannelCommand(id, unarchivedById);
+            var result = await _mediator.Send(command, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+            _logger.LogInformation("Channel {ChannelId} unarchived by {UnarchivedBy}", id, unarchivedById);
+            return Ok(result);
+        }
     }
 }
