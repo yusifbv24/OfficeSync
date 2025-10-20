@@ -34,7 +34,6 @@ namespace ChannelService.Infrastructure.Repositories
                 query = query.Include(include);
             }
             return await query
-                .AsNoTracking()
                 .FirstOrDefaultAsync(e => EF.Property<Guid>(e, "Id") == id, cancellationToken);
         }
 
@@ -72,13 +71,7 @@ namespace ChannelService.Infrastructure.Repositories
 
         public Task UpdateAsync(T entity,CancellationToken cancellationToken = default)
         {
-            var entry= _context.Entry(entity);
-            if (entry.State == EntityState.Detached)
-            {
-                _context.Attach(entity);
-                entry.State = EntityState.Modified;
-            }
-            _context.ChangeTracker.DetectChanges();
+            _dbSet.Update(entity);
             return Task.CompletedTask;
         }
 

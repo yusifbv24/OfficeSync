@@ -66,8 +66,6 @@ namespace ChannelService.Application.Commands.Members
                 // - Ensures the member exists in the channel
                 channel.ChangeMemberRole(request.UserId, request.Role, request.ChangedBy);
 
-                // Update the channel 
-                await _unitOfWork.Channels.UpdateAsync(channel, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger?.LogInformation(

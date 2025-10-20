@@ -72,7 +72,6 @@ namespace ChannelService.Application.Commands.Members
                 // Use domain logic for adding member (includes all business rules)
                 channel.AddMember(request.UserId,request.AddedBy,request.Role);
 
-                await _unitOfWork.Channels.UpdateAsync(channel,cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 

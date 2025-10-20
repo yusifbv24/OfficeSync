@@ -72,7 +72,6 @@ namespace ChannelService.Application.Commands.Channels
 
             channel.UpdateInfo(name, request.Description);
 
-            await _unitOfWork.Channels.UpdateAsync(channel, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var dto = _mapper.Map<ChannelDto>(channel);
