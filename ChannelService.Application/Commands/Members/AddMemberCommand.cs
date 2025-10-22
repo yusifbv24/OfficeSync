@@ -3,6 +3,7 @@ using ChannelService.Application.Interfaces;
 using ChannelService.Domain.Enums;
 using FluentValidation;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace ChannelService.Application.Commands.Members
@@ -68,29 +69,49 @@ namespace ChannelService.Application.Commands.Members
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<bool>.Failure("Channel not found");
                 }
+                // Check if this user was previously a member (to distinguish restore from new add)
+                var existingMember =channel.Members.FirstOrDefault(m=>m.UserId==request.UserId);
+                var isRejoining = existingMember != null && existingMember.IsRemoved;
 
                 // Use domain logic for adding member
                 channel.AddMember(request.UserId, request.AddedBy, request.Role);
 
-                // Check the state of the new member
-                var newMember = channel.Members.FirstOrDefault(m => m.UserId == request.UserId);
-                if (newMember != null)
+                // Get the member after the domain operation
+                var member = channel.Members.FirstOrDefault(m => m.UserId == request.UserId && !m.IsRemoved);
+                if (member != null)
                 {
-                    // Explicitly tell Entity Framework this is a new entity
-                    var context = _unitOfWork.GetContext();
-                    context.Entry(newMember).State = Microsoft.EntityFrameworkCore.EntityState.Added;
-                }
+                    var context=_unitOfWork.GetContext();
 
+                    if (isRejoining)
+                    {
+                        // This is a restored member - mark as modified
+                        // EF needs to know we changed an existing entity
+                        context.Entry(member).State = EntityState.Modified;
+
+                        _logger?.LogInformation(
+                            "Member {UserId} restored to channel {ChannelId} by {AddedBy}",
+                            request.UserId,
+                            request.ChannelId,
+                            request.AddedBy);
+                    }
+                    else
+                    {
+                        // This is a truly new member - mark as added
+                        context.Entry(member).State =EntityState.Added;
+
+                        _logger?.LogInformation(
+                            "New member {UserId} added to channel {ChannelId} by {AddedBy}",
+                            request.UserId,
+                            request.ChannelId,
+                            request.AddedBy);
+                    }
+                }
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                _logger?.LogInformation(
-                    "Member {UserId} added to channel {ChannelId} by {AddedBy}",
-                    request.UserId,
-                    request.ChannelId,
-                    request.AddedBy);
 
-                return Result<bool>.Success(true, "Member added successfully");
+                return Result<bool>.Success(true,
+                    isRejoining? "Member restored succesfully" : "Member added successfully");
             }
             catch (InvalidOperationException ex)
             {
