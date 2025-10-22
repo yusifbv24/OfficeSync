@@ -59,7 +59,7 @@ namespace ChannelService.Application.Commands.Members
 
                 // Use domain logic for removing member (includes permission checks)
                 channel.RemoveMember(request.UserId, request.RemovedBy);
-
+                await _unitOfWork.Channels.UpdateAsync(channel, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger?.LogInformation(

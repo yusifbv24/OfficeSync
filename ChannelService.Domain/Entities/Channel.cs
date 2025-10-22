@@ -108,13 +108,23 @@ namespace ChannelService.Domain.Entities
                 throw new InvalidOperationException("Only owners and moderators can add members");
 
             // Check if user is already a member
-            var existingMember=_members.FirstOrDefault(m=>m.UserId==userId&&!m.IsRemoved);
-            if (existingMember != null)
+            var activeMember=_members.FirstOrDefault(m=>m.UserId==userId&&!m.IsRemoved);
+            if (activeMember != null)
                 throw new InvalidOperationException("User is already a member of this channel");
 
-            // Create new member
-            var member = ChannelMember.Create(Id, userId, role, addedBy);
-            _members.Add(member);
+            // Check if this user was previously a member but was removed
+            // If so, we will restore them rather than creating a new member record
+            var removedMember =_members.FirstOrDefault(m=>m.UserId==userId && m.IsRemoved);
+            if (removedMember!=null && removedMember.IsRemoved)
+            {
+                removedMember.Restore(addedBy,role);
+            }
+            else
+            {
+                // Create new member
+                var member = ChannelMember.Create(Id, userId, role, addedBy);
+                _members.Add(member);
+            }
 
             // Raise domain event
             AddDomainEvent(new MemberAddedEvent(Id, userId, role, addedBy));

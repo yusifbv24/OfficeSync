@@ -61,6 +61,11 @@ namespace ChannelService.Infrastructure.Configurations
             builder.HasIndex(e => e.CreatedAt)
                 .HasDatabaseName("ix_channels_created_at");
 
+            // Configure the Members navigation property with explicit backing field mapping
+            builder.Metadata
+                .FindNavigation(nameof(Channel.Members))!
+                .SetPropertyAccessMode(PropertyAccessMode.Field);
+
             // Relationships
             builder.HasMany(e => e.Members)
                 .WithOne(m => m.Channel)

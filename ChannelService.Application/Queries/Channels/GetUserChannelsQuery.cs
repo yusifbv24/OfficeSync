@@ -46,7 +46,7 @@ namespace ChannelService.Application.Queries.Channels
                 .Skip((request.PageNumber - 1) * request.PageSize)
                 .Take(request.PageSize);
 
-            var channels = await _unitOfWork.Channels.CountAsync(pagedQuery, cancellationToken);
+            var channels = await _unitOfWork.Channels.ToListAsync(pagedQuery, cancellationToken);
 
             var dtos = _mapper.Map<List<ChannelListDto>>(channels);
 

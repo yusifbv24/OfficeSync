@@ -63,14 +63,23 @@ namespace ChannelService.Application.Commands.Members
                     cancellationToken,
                     c => c.Members);
 
-                if (channel==null)
+                if (channel == null)
                 {
                     await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                     return Result<bool>.Failure("Channel not found");
                 }
 
-                // Use domain logic for adding member (includes all business rules)
-                channel.AddMember(request.UserId,request.AddedBy,request.Role);
+                // Use domain logic for adding member
+                channel.AddMember(request.UserId, request.AddedBy, request.Role);
+
+                // Check the state of the new member
+                var newMember = channel.Members.FirstOrDefault(m => m.UserId == request.UserId);
+                if (newMember != null)
+                {
+                    // Explicitly tell Entity Framework this is a new entity
+                    var context = _unitOfWork.GetContext();
+                    context.Entry(newMember).State = Microsoft.EntityFrameworkCore.EntityState.Added;
+                }
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
                 await _unitOfWork.CommitTransactionAsync(cancellationToken);
@@ -81,16 +90,17 @@ namespace ChannelService.Application.Commands.Members
                     request.ChannelId,
                     request.AddedBy);
 
-                return Result<bool>.Success(true, "Member added succesfully");
+                return Result<bool>.Success(true, "Member added successfully");
             }
             catch (InvalidOperationException ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
                 return Result<bool>.Failure(ex.Message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 await _unitOfWork.RollbackTransactionAsync(cancellationToken);
+                _logger.LogError(ex, "Error adding member: {Message}", ex.Message);
                 return Result<bool>.Failure(ex.Message);
             }
         }

@@ -80,5 +80,17 @@ namespace ChannelService.Domain.Entities
             RemovedBy = removedBy;
             UpdateTimestamp();
         }
+
+        public void Restore(Guid addedBy,MemberRole role)
+        {
+            if(!IsRemoved)
+                throw new InvalidOperationException("Cannot restore a member who is not removed");
+
+            IsRemoved = false;
+            RemovedAt = null;
+            RemovedBy = null;
+            Role=role;
+            UpdateTimestamp();
+        }
     }
 }
