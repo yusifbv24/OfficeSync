@@ -1,0 +1,6 @@
+@MessagingService.API_HostAddress = http://localhost:5273
+
+GET {{MessagingService.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

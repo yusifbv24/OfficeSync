@@ -12,6 +12,12 @@
     <Project Path="IdentityService.Domain/IdentityService.Domain.csproj" />
     <Project Path="IdentityService.Infrastructure/IdentityService.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/Services/MessagingService/">
+    <Project Path="MessagingService.API/MessagingService.API.csproj" Id="af821151-a753-47e0-a914-85d8bfddcf5c" />
+    <Project Path="MessagingService.Application/MessagingService.Application.csproj" Id="6d4c965a-a01a-415f-9341-5899db9c84b3" />
+    <Project Path="MessagingService.Domain/MessagingService.Domain.csproj" Id="b4583c78-34d7-4997-8ae0-73a5c39074d6" />
+    <Project Path="MessagingService.Infrastructure/MessagingService.Infrastructure.csproj" Id="3f80ff4c-5a74-45cf-910b-8da663aeec1c" />
+  </Folder>
   <Folder Name="/Services/UserManagementService/">
     <Project Path="UserManagementService.API/UserManagementService.API.csproj" Id="cf0e63b0-a5d2-498d-9023-6184a935a0cf" />
     <Project Path="UserManagementService.Application/UserManagementService.Application.csproj" Id="f3512edc-d638-42b7-b9b4-3e96cf10fbc4" />
