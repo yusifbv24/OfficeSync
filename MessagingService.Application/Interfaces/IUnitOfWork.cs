@@ -1,10 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using MessagingService.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace MessagingService.Application.Interfaces
 {
-    public interface IUnitOfWork
+    public interface IUnitOfWork:IDisposable
     {
+        IRepository<Message> Messages { get; }
+        IRepository<MessageReaction> Reactions { get; }
+        IRepository<MessageAttachment> Attachments { get; }
+        DbContext GetContext();
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken=default);
+        Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+        Task CommitTransactionAsync(CancellationToken cancellationToken = default);
+        Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
     }
 }

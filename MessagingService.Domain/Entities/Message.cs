@@ -1,5 +1,6 @@
 ﻿using MessagingService.Domain.Common;
 using MessagingService.Domain.Enums;
+using MessagingService.Domain.Events;
 using MessagingService.Domain.ValueObjects;
 
 namespace MessagingService.Domain.Entities
@@ -15,6 +16,7 @@ namespace MessagingService.Domain.Entities
         private readonly List<DomainEvent> _domainEvents = [];
         private readonly List<MessageReaction> _reactions = [];
         private readonly List<MessageAttachment> _attachments = [];
+        private readonly List<MessageReadReceipt> _readReceipts = [];
 
         // Private setters prevent external modification - all changes must go through methods
         public Guid ChannelId { get; private set; }
@@ -35,9 +37,10 @@ namespace MessagingService.Domain.Entities
         public Message? ParrentMessage { get;private set;  }
 
         // Read-only collections prevent external modification of relationships
-        public IReadOnlyCollection<MessageReactions> Reactions=>_reactions.AsReadOnly();
-        public IReadOnlyCollection<MessageAttachments> Attachments=>_attachments.AsReadOnly();
+        public IReadOnlyCollection<MessageReaction> Reactions=>_reactions.AsReadOnly();
+        public IReadOnlyCollection<MessageAttachment> Attachments=>_attachments.AsReadOnly();
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+        public IReadOnlyCollection<MessageReadReceipt> ReadReceipts=>_readReceipts.AsReadOnly();
 
 
         // Private constructor for EF Core - prevents direct instantiation
@@ -77,6 +80,8 @@ namespace MessagingService.Domain.Entities
         }
 
 
+
+
         /// <summary>
         /// Edit the message content.
         /// Business rule: Only the sender can edit their own message.
@@ -98,10 +103,11 @@ namespace MessagingService.Domain.Entities
             Content = newContent;
             IsEdited=true;
             EditedAt=DateTime.UtcNow;
-            UpdateTimeStamp();
+            UpdateTimestamp();
 
             AddDomainEvent(new MessageEditedEvent(Id, ChannelId, editedBy));
         }
+
 
 
 
@@ -125,10 +131,11 @@ namespace MessagingService.Domain.Entities
             // When deleting, we clear the content but keep the metadata
             // This preserves conversation flow while removing sensitive content
             Content="[Message deleted]";
-            UpdateTimeStamp();
+            UpdateTimestamp();
 
             AddDomainEvent(new MessageDeletedEvent(Id,ChannelId, deletedBy));
         }
+
 
 
 
@@ -169,9 +176,10 @@ namespace MessagingService.Domain.Entities
                 var reaction=MessageReaction.Create(Id,userId,emoji);
                 _reactions.Add(reaction);
             }
-            UpdateTimeStamp();
+            UpdateTimestamp();
             AddDomainEvent(new ReactionAddedEvent(Id, ChannelId, userId, emoji));
         }
+
 
 
 
@@ -190,7 +198,7 @@ namespace MessagingService.Domain.Entities
                 throw new InvalidOperationException("Reaction not found");
 
             reaction.Remove();
-            UpdateTimeStamp();
+            UpdateTimestamp();
 
             AddDomainEvent(new ReactionRemovedEvent(Id,ChannelId, userId, emoji));
         }
@@ -216,8 +224,68 @@ namespace MessagingService.Domain.Entities
                 Type = mimeType.StartsWith("image/") ? MessageType.Image : MessageType.File;
             }
 
-            UpdateTimeStamp();
+            UpdateTimestamp();
         }
+
+
+
+        /// <summary>
+        /// Mark message as read by a user.
+        /// If already read, updates the read time.
+        /// </summary>
+        public void MarkAsRead(Guid userId)
+        {
+            // Dont allow sender to mark their own message as read 
+            if (userId == SenderId)
+                return;
+
+            // Check if user already read this message
+            var existingReceipt = _readReceipts.FirstOrDefault(r => r.UserId == userId);
+
+            if (existingReceipt != null)
+            {
+                // Update read time
+                existingReceipt.UpdateReadTime();
+            }
+            else
+            {
+                // Create new read receipt
+                var receipt = MessageReadReceipt.Create(Id, userId);
+                _readReceipts.Add(receipt);
+            }
+            UpdateTimestamp();
+        }
+
+
+
+        /// <summary>
+        /// Check if a specific user has read this message.
+        /// </summary>
+        public bool HasUserRead(Guid userId)
+        {
+            return _readReceipts.Any(r => r.UserId == userId);
+        }
+
+
+
+        /// <summary>
+        /// Get all users who have read this message.
+        /// </summary>
+        public IEnumerable<Guid> GetReadByUsers()
+        {
+            return _readReceipts.Select(r => r.UserId);
+        }
+
+
+
+        /// <summary>
+        /// Get the count of users who have read this message.
+        /// </summary>
+        public int GetReadCount()
+        {
+            return _readReceipts.Count;
+        }
+
 
 
 

@@ -84,11 +84,11 @@ namespace MessagingService.Application.Queries.Messages
             var messages=await _unitOfWork.Messages.ToListAsync(pagedQuery,cancellationToken);
 
             //Get sender names
-            var senderIds=messages.Select(m=>m.SenderId).ToDistinct().ToList();
+            var senderIds=messages.Select(m=>m.SenderId).Distinct().ToList();
             var userNamesDict = new Dictionary<Guid, string>();
             foreach(var senderId in senderIds)
             {
-                var userResult = _userServiceClient.GetUserDisplayNameAsync(senderId, cancellationToken).Result();
+                var userResult = await _userServiceClient.GetUserDisplayNameAsync(senderId, cancellationToken);
                 userNamesDict[senderId] = userResult.IsSuccess && userResult.Data != null
                     ? userResult.Data
                     : "Unknown User";

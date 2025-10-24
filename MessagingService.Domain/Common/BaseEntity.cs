@@ -12,7 +12,7 @@
             UpdatedAt= DateTime.UtcNow;
         }
 
-        public void UpdateTimeStamp()
+        public void UpdateTimestamp()
         {
             UpdatedAt= DateTime.UtcNow;
         }

@@ -3,6 +3,6 @@
     /// <summary>
     /// Request to add a reaction (emoji) to a message.
     /// </summary>
-    public record AddReactionRequestDto(
+    public record ReactionRequestDto(
         string Emoji);
 }

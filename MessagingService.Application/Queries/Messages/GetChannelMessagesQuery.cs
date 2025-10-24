@@ -19,7 +19,7 @@ namespace MessagingService.Application.Queries.Messages
 
 
 
-    public class GetChannelMessageQueryHandler:IRequestHandler<GetChannelMessagesQuery, Result<PagedResult<MessageListDto>>>
+    public class GetChannelMessagesQueryHandler:IRequestHandler<GetChannelMessagesQuery, Result<PagedResult<MessageListDto>>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IChannelServiceClient _channelServiceClient;
@@ -86,7 +86,7 @@ namespace MessagingService.Application.Queries.Messages
             var userNamesDict = new Dictionary<Guid, string>();
             foreach(var senderId in senderIds)
             {
-                var userResult = _userServiceClient.GetUserDisplayNameAsync(senderId, cancellationToken).Result();
+                var userResult = await _userServiceClient.GetUserDisplayNameAsync(senderId, cancellationToken);
                 userNamesDict[senderId] = userResult.IsSuccess && userResult.Data != null
                     ? userResult.Data
                     : "Unknown User";

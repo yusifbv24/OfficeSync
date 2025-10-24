@@ -54,7 +54,7 @@ namespace MessagingService.Domain.Entities
 
             IsRemoved = true;
             RemovedAt = DateTime.UtcNow;
-            UpdateTimeStamp();
+            UpdateTimestamp();
         }
 
 
@@ -70,7 +70,7 @@ namespace MessagingService.Domain.Entities
 
             IsRemoved = false;
             RemovedAt = null;
-            UpdateTimeStamp();
+            UpdateTimestamp();
         }
     }
 }

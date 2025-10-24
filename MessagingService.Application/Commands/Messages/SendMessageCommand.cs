@@ -16,7 +16,7 @@ namespace MessagingService.Application.Commands.Messages
     /// Immutable record ensures thread safety.
     /// </summary>
     public record SendMessageCommand(
-        Guid channelId,
+        Guid ChannelId,
         Guid SenderId,
         string Content,
         MessageType Type=MessageType.Text,
@@ -27,7 +27,7 @@ namespace MessagingService.Application.Commands.Messages
     {
         public SendMessageCommandValidator()
         {
-            RuleFor(x => x.channelId)
+            RuleFor(x => x.ChannelId)
                 .NotEmpty().WithMessage("ChannelId is required");
             RuleFor(x => x.SenderId)
                 .NotEmpty().WithMessage("SenderId is required");
@@ -44,14 +44,14 @@ namespace MessagingService.Application.Commands.Messages
     public class SendMessageCommandHandler : IRequestHandler<SendMessageCommand, Result<MessageDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IChannelService _channelServiceClient;
+        private readonly IChannelServiceClient _channelServiceClient;
         private readonly IUserServiceClient _userServiceClient;
         private readonly IMapper _mapper;
         private readonly ILogger<SendMessageCommandHandler> _logger;
 
         public SendMessageCommandHandler(
             IUnitOfWork unitOfWork,
-            IChannelService channelServiceClient,
+            IChannelServiceClient channelServiceClient,
             IUserServiceClient userServiceClient,
             IMapper mapper,
             ILogger<SendMessageCommandHandler> logger)
@@ -72,7 +72,7 @@ namespace MessagingService.Application.Commands.Messages
                 // Verify the user is a member of the channel
                 // This is a cross-service call to Channel Service
                 var isMember = await _channelServiceClient.IsUserMemberOfChannelAsync(
-                    request.channelId,
+                    request.ChannelId,
                     request.SenderId,
                     cancellationToken);
 
@@ -99,7 +99,7 @@ namespace MessagingService.Application.Commands.Messages
 
                 // Create message using domain model
                 var message = Message.Create(
-                    channelId: request.channelId,
+                    channelId: request.ChannelId,
                     senderId: request.SenderId,
                     content: content,
                     type: request.Type,
@@ -112,7 +112,7 @@ namespace MessagingService.Application.Commands.Messages
                 _logger?.LogInformation(
                     "Message {MessageId} sent to channel {ChannelId} by user {SenderId}",
                     message.Id,
-                    request.channelId,
+                    request.ChannelId,
                     request.SenderId);
 
                 // Get sender name for the DTO

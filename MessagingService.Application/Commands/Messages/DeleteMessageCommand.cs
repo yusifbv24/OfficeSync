@@ -24,7 +24,7 @@ namespace MessagingService.Application.Commands.Messages
     }
 
 
-    public class DeleteMessageCommandHandler : IRequestHandler<IRequestHandler, Result<bool>>
+    public class DeleteMessageCommandHandler : IRequestHandler<DeleteMessageCommand, Result<bool>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<DeleteMessageCommandHandler> _logger;

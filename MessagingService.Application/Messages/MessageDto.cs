@@ -33,5 +33,25 @@ namespace MessagingService.Application.Messages
         /// File attachments on this message.
         /// </summary>
         public List<MessageAttachmentDto> Attachments { get; init; } = [];
+
+
+        /// <summary>
+        /// Count of users who have read this message.
+        /// For group channels, shows how many members have seen it.
+        /// </summary>
+        public int ReadCount { get; init; }
+
+
+        /// <summary>
+        /// List of users who have read this message with timestamps.
+        /// Limited to prevent huge payloads in large groups.
+        /// </summary>
+        public List<ReadReceiptDto> ReadBy { get; init; } = new();
+
+
+        /// <summary>
+        /// Whether the requesting user has read this message.
+        /// </summary>
+        public bool IsReadByMe { get; init; }
     }
 }

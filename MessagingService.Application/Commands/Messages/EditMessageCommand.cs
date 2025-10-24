@@ -108,7 +108,7 @@ namespace MessagingService.Application.Commands.Messages
         private async Task<string> GetUserDisplayNameAsync(Guid userId,CancellationToken cancellationToken)
         {
             var result= await _userServiceClient.GetUserDisplayNameAsync(userId, cancellationToken);
-            return result.IsSuccess && result.Data != null ? result.Data.DisplayName : "Unknows user";
+            return result.IsSuccess && result.Data != null ? result.Data : "Unknows user";
         }
     }
 }
