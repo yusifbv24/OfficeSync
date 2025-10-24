@@ -222,6 +222,51 @@ namespace MessagingService.Infrastructure.Migrations
                     b.ToTable("message_reactions", (string)null);
                 });
 
+            modelBuilder.Entity("MessagingService.Domain.Entities.MessageReadReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("message_id");
+
+                    b.Property<DateTime>("ReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("read_at");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId")
+                        .HasDatabaseName("ix_message_read_receipts_message_id");
+
+                    b.HasIndex("ReadAt")
+                        .HasDatabaseName("ix_message_read_receipts_read_at");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_message_read_receipts_user_id");
+
+                    b.HasIndex("MessageId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_message_read_receipts_message_user");
+
+                    b.ToTable("message_read_receipts", (string)null);
+                });
+
             modelBuilder.Entity("MessagingService.Domain.Entities.Message", b =>
                 {
                     b.HasOne("MessagingService.Domain.Entities.Message", "ParrentMessage")
@@ -254,11 +299,24 @@ namespace MessagingService.Infrastructure.Migrations
                     b.Navigation("Message");
                 });
 
+            modelBuilder.Entity("MessagingService.Domain.Entities.MessageReadReceipt", b =>
+                {
+                    b.HasOne("MessagingService.Domain.Entities.Message", "Message")
+                        .WithMany("ReadReceipts")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
             modelBuilder.Entity("MessagingService.Domain.Entities.Message", b =>
                 {
                     b.Navigation("Attachments");
 
                     b.Navigation("Reactions");
+
+                    b.Navigation("ReadReceipts");
                 });
 #pragma warning restore 612, 618
         }

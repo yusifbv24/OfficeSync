@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MessagingService.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialProject : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -88,6 +88,28 @@ namespace MessagingService.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "message_read_receipts",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    message_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    read_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_message_read_receipts", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_message_read_receipts_messages_message_id",
+                        column: x => x.message_id,
+                        principalTable: "messages",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "ix_message_attachments_file_id",
                 table: "message_attachments",
@@ -131,6 +153,27 @@ namespace MessagingService.Infrastructure.Migrations
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_message_read_receipts_message_id",
+                table: "message_read_receipts",
+                column: "message_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_message_read_receipts_message_user",
+                table: "message_read_receipts",
+                columns: new[] { "message_id", "user_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_message_read_receipts_read_at",
+                table: "message_read_receipts",
+                column: "read_at");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_message_read_receipts_user_id",
+                table: "message_read_receipts",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_messages_channel_created_deleted",
                 table: "messages",
                 columns: new[] { "channel_id", "created_at", "is_deleted" });
@@ -169,6 +212,9 @@ namespace MessagingService.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "message_reactions");
+
+            migrationBuilder.DropTable(
+                name: "message_read_receipts");
 
             migrationBuilder.DropTable(
                 name: "messages");

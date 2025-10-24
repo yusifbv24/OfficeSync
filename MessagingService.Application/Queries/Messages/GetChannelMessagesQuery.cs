@@ -24,18 +24,15 @@ namespace MessagingService.Application.Queries.Messages
         private readonly IUnitOfWork _unitOfWork;
         private readonly IChannelServiceClient _channelServiceClient;
         private readonly IUserServiceClient _userServiceClient;
-        private readonly IMapper _mapper;
 
         public GetChannelMessagesQueryHandler(
             IUnitOfWork unitOfWork,
             IChannelServiceClient channelServiceClient,
-            IUserServiceClient userServiceClient,
-            IMapper mapper)
+            IUserServiceClient userServiceClient)
         {
             _unitOfWork = unitOfWork;
             _channelServiceClient = channelServiceClient;
             _userServiceClient = userServiceClient;
-            _mapper = mapper;
         }
 
 
