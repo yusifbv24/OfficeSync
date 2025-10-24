@@ -10,6 +10,5 @@ namespace MessagingService.Application.Messages
     public record SendMessageRequestDto(
         string Content,
         MessageType Type=MessageType.Text,
-        Guid? ParentMessageId=null,
-        List<AttachmentInfo>? Attachments=null);
+        Guid? ParentMessageId=null);
 }
