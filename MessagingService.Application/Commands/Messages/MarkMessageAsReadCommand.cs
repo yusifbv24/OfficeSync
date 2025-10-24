@@ -1,8 +1,6 @@
-﻿using AutoMapper.Execution;
-using MediatR;
+﻿using MediatR;
 using MessagingService.Application.Common;
 using MessagingService.Application.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace MessagingService.Application.Commands.Messages
@@ -49,33 +47,17 @@ namespace MessagingService.Application.Commands.Messages
                     return Result<bool>.Failure("Message not found");
                 }
 
-                var existingReadReceipt= message.ReadReceipts.FirstOrDefault(
-                    r=>r.MessageId == request.MessageId && 
-                    r.UserId == request.UserId );
-
-                if(existingReadReceipt != null)
-                {
-                    return Result<bool>.Success(true, "Message already marked as read");
-                }
-
                 // Use domain logic to mark as read
                 message.MarkAsRead(request.UserId);
-                var readReceipt = message.ReadReceipts.FirstOrDefault(
-                    r => r.MessageId == request.MessageId && 
-                    r.UserId == request.UserId);
 
-                if( readReceipt != null )
-                {
-                    var context = _unitOfWork.GetContext();
-                    context.Entry(message).State = EntityState.Added;
+                await _unitOfWork.Messages.UpdateAsync(message, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-                    _logger?.LogInformation(
-                        "Message {MessageId} marked as read by user {UserId}",
-                        request.MessageId,
-                        request.UserId);
-                    await _unitOfWork.SaveChangesAsync(cancellationToken);
-                    await _unitOfWork.CommitTransactionAsync(cancellationToken);
-                }
+                _logger?.LogInformation(
+                    "Message {MessageId} marked as read by user {UserId}",
+                    request.MessageId,
+                    request.UserId);
+
                 return Result<bool>.Success(true, "Message marked as read");
             }
             catch (Exception ex)

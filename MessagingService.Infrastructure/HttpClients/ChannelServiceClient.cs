@@ -20,7 +20,7 @@ namespace MessagingService.Infrastructure.HttpClients
 
         public ChannelServiceClient(
             HttpClient httpClient,
-            IHttpContextAccessor htttpContextAccessor,
+            HttpContextAccessor htttpContextAccessor,
             IConfiguration configuration,
             ILogger<ChannelServiceClient> logger)
         {

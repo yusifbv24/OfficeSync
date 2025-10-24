@@ -50,7 +50,7 @@ namespace MessagingService.Infrastructure.HttpClients
                 await AddAuthorizationHeaderAsync();
 
                 var response = await _httpClient.GetAsync(
-                    $"/api/users/by-userid/{userId}",
+                    $"/api/users/{userId}",
                     cancellationToken);
 
                 return Result<bool>.Success(response.IsSuccessStatusCode);
@@ -73,7 +73,7 @@ namespace MessagingService.Infrastructure.HttpClients
                 await AddAuthorizationHeaderAsync();
 
                 var response = await _httpClient.GetAsync(
-                    $"/api/users/by-userid/{userId}",
+                    $"/api/users/{userId}",
                     cancellationToken);
 
                 if (!response.IsSuccessStatusCode)

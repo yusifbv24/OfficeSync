@@ -127,6 +127,10 @@ namespace MessagingService.Domain.Entities
 
             IsDeleted = true;
             DeletedAt=DateTime.UtcNow;
+
+            // When deleting, we clear the content but keep the metadata
+            // This preserves conversation flow while removing sensitive content
+            Content="[Message deleted]";
             UpdateTimestamp();
 
             AddDomainEvent(new MessageDeletedEvent(Id,ChannelId, deletedBy));
@@ -232,13 +236,23 @@ namespace MessagingService.Domain.Entities
         public void MarkAsRead(Guid userId)
         {
             // Dont allow sender to mark their own message as read 
-            if (userId != SenderId)
-                throw new InvalidOperationException("Only message owner can mark as read message.");
+            if (userId == SenderId)
+                return;
 
-            // Create new read receipt
-            var receipt = MessageReadReceipt.Create(Id, userId);
-            _readReceipts.Add(receipt);
+            // Check if user already read this message
+            var existingReceipt = _readReceipts.FirstOrDefault(r => r.UserId == userId);
 
+            if (existingReceipt != null)
+            {
+                // Update read time
+                existingReceipt.UpdateReadTime();
+            }
+            else
+            {
+                // Create new read receipt
+                var receipt = MessageReadReceipt.Create(Id, userId);
+                _readReceipts.Add(receipt);
+            }
             UpdateTimestamp();
         }
 

@@ -91,33 +91,6 @@ namespace UserManagementService.API.Controllers
 
 
 
-
-        /// <summary>
-        /// Get a user profile by the UserId from Identity Service.
-        /// This is used by other microservices to get user information
-        /// based on the ID from the JWT token.
-        /// </summary>
-        [HttpGet("by-userid/{userId:guid}")]
-        [ProducesResponseType(typeof(UserProfileDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult> GetUserProfileByUserId(
-            Guid userId,
-            CancellationToken cancellationToken)
-        {
-            var query = new GetUserProfileByUserIdQuery(userId);
-            var result = await _mediator.Send(query, cancellationToken);
-
-            if (!result.IsSuccess)
-            {
-                return NotFound(result);
-            }
-
-            return Ok(result);
-        }
-
-
-
-
         /// <summary>
         /// Get all users with pagination.
         /// </summary>
