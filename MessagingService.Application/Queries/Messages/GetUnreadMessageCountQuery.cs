@@ -28,7 +28,7 @@ namespace MessagingService.Application.Queries.Messages
             var query = _unitOfWork.Messages
                 .GetQueryable()
                 .Where(m => m.ChannelId == request.ChannelId)
-                .Where(m => m.SenderId == request.UserId)
+                .Where(m => m.SenderId != request.UserId)
                 .Where(m => !m.IsDeleted)
                 .Where(m => !m.ReadReceipts.Any(r => r.UserId == request.UserId));
 

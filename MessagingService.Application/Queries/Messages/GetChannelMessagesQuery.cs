@@ -3,6 +3,7 @@ using MediatR;
 using MessagingService.Application.Common;
 using MessagingService.Application.Interfaces;
 using MessagingService.Application.Messages;
+using Microsoft.EntityFrameworkCore;
 
 namespace MessagingService.Application.Queries.Messages
 {
@@ -54,6 +55,8 @@ namespace MessagingService.Application.Queries.Messages
             // Build query using IQueryable - deferred execution
             var query = _unitOfWork.Messages
                 .GetQueryable()
+                .Include(m=>m.Reactions)
+                .Include(m=>m.Attachments)
                 .Where(m => m.ChannelId == request.ChannelId);
 
             // Optionally filter deleted messages
@@ -74,7 +77,25 @@ namespace MessagingService.Application.Queries.Messages
                 .Take(request.PageSize);
 
             // Execute query - now we hit the database with optimized SQL
-            var messages = await _unitOfWork.Messages.ToListAsync(pagedQuery, cancellationToken);
+            var messages = await query
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(m => new MessageListDto
+                {
+                    Id = m.Id,
+                    ChannelId = m.ChannelId,
+                    SenderId = m.SenderId,
+                    SenderName = "", // We'll fill this in next step
+                    Content = m.Content,
+                    Type = m.Type,
+                    IsEdited = m.IsEdited,
+                    IsDeleted = m.IsDeleted,
+                    CreatedAt = m.CreatedAt,
+                    ReactionCount = m.Reactions.Count(r => !r.IsRemoved),
+                    AttachmentCount = m.Attachments.Count
+                })
+                .ToListAsync(cancellationToken);
 
             // Get uniqiue sender IDs to batch-fetch user names
             var senderIds = messages.Select(m => m.SenderId).Distinct().ToList();
@@ -89,26 +110,16 @@ namespace MessagingService.Application.Queries.Messages
                     : "Unknown User";
             }
 
-            // Map to DTOs with sender names
-            var dtos = messages.Select(m => new MessageListDto
+            foreach (var message in messages)
             {
-                Id = m.Id,
-                ChannelId = m.ChannelId,
-                SenderId = m.SenderId,
-                SenderName = userNamesDict.GetValueOrDefault(m.SenderId, "Unknown User"),
-                Content = m.Content,
-                Type = m.Type,
-                IsEdited = m.IsEdited,
-                IsDeleted = m.IsDeleted,
-                CreatedAt = m.CreatedAt,
-                ReactionCount = m.Reactions.Count(r => !r.IsRemoved),
-                AttachmentCount=m.Attachments.Count
-            })
-                .ToList();
+                message.SenderName = userNamesDict.GetValueOrDefault(
+                    message.SenderId,
+                    "Unknown User");
+            }
 
             // Create paged result
             var pagedResult = PagedResult<MessageListDto>.Create(
-                dtos,
+                messages,
                 totalCount,
                 request.PageNumber,
                 request.PageSize);

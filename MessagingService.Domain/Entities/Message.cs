@@ -187,11 +187,11 @@ namespace MessagingService.Domain.Entities
         /// Remove a reaction from the message.
         /// Business rule: Can only remove your own reactions.
         /// </summary>
-        public void RemoveReaction(Guid userId, string emoji)
+        public void RemoveReaction(Guid userId, Guid messageId)
         {
             var reaction=_reactions.First(r=>
                 r.UserId==userId &&
-                r.Emoji==emoji &&
+                r.MessageId==messageId &&
                 !r.IsRemoved);
 
             if (reaction == null)
@@ -200,7 +200,7 @@ namespace MessagingService.Domain.Entities
             reaction.Remove();
             UpdateTimestamp();
 
-            AddDomainEvent(new ReactionRemovedEvent(Id,ChannelId, userId, emoji));
+            AddDomainEvent(new ReactionRemovedEvent(Id,ChannelId, userId));
         }
 
 

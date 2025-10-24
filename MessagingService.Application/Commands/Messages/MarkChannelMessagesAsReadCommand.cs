@@ -39,7 +39,7 @@ namespace MessagingService.Application.Commands.Messages
                     .GetQueryable()
                     .Include(m => m.ReadReceipts)
                     .Where(m => m.ChannelId == request.ChannelId)
-                    .Where(m => m.SenderId == request.UserId) // Don't mark own messages
+                    .Where(m => m.SenderId != request.UserId) // Don't mark own messages
                     .Where(m => !m.IsDeleted)
                     .Where(m => !m.ReadReceipts.Any(r => r.UserId == request.UserId));
 
@@ -51,12 +51,23 @@ namespace MessagingService.Application.Commands.Messages
 
                 var unreadMessages = await _unitOfWork.Messages.ToListAsync(query, cancellationToken);
 
-                // Mark each message as read
-                foreach(var message in unreadMessages)
+                // If there are no unread messages, we can return early
+                if (!unreadMessages.Any())
                 {
-                    message.MarkAsRead(request.UserId);
+                    await _unitOfWork.CommitTransactionAsync(cancellationToken);
+                    return Result<int>.Success(0, "No unread messages to mark");
                 }
 
+                foreach(var message in unreadMessages)
+                {
+                    var context = _unitOfWork.GetContext();
+                    message.MarkAsRead(request.UserId);
+                    var readReceipt = message.ReadReceipts.FirstOrDefault(r => r.UserId == request.UserId);
+                    if (readReceipt != null)
+                    {
+                        context.Entry(readReceipt).State = EntityState.Added;
+                    }
+                }
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger?.LogInformation(

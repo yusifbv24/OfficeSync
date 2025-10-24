@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using MessagingService.Application.Common;
 using MessagingService.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace MessagingService.Application.Commands.Messages
@@ -50,7 +51,13 @@ namespace MessagingService.Application.Commands.Messages
                 // Use domain logic to mark as read
                 message.MarkAsRead(request.UserId);
 
-                await _unitOfWork.Messages.UpdateAsync(message, cancellationToken);
+                var readReceipt = message.ReadReceipts.FirstOrDefault(r => r.UserId == request.UserId);
+                if (readReceipt != null)
+                {
+                    var context = _unitOfWork.GetContext();
+                    context.Entry(readReceipt).State = EntityState.Added;
+                }
+
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger?.LogInformation(

@@ -83,14 +83,13 @@ namespace MessagingService.API.Controllers
         /// <param name="emoji">The emoji to remove</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Success status</returns>
-        [HttpDelete("{emoji}")]
+        [HttpDelete]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RemoveReaction(
             Guid channelId,
             Guid messageId,
-            [FromBody] ReactionRequestDto request,
             CancellationToken cancellationToken)
         {
             var userIdClaim=User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -101,8 +100,7 @@ namespace MessagingService.API.Controllers
 
             var command = new RemoveReactionCommand(
                 MessageId: messageId,
-                UserId: userId,
-                Emoji: request.Emoji);
+                UserId: userId);
 
             var result=await _mediator.Send(command,cancellationToken);
 
@@ -112,8 +110,7 @@ namespace MessagingService.API.Controllers
             }
 
             _logger?.LogInformation(
-                "Reaction {Emoji} removed from message {MessageId} by user {UserId}",
-                request.Emoji,
+                "Reaction removed from message {MessageId} by user {UserId}",
                 messageId,
                 userId);
 

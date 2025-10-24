@@ -11,7 +11,7 @@ namespace MessagingService.Application.Messages
         public Guid Id { get; init; }
         public Guid ChannelId { get; init; }
         public Guid SenderId { get; init; }
-        public string SenderName { get; init; }=string.Empty;
+        public string SenderName { get; set; }=string.Empty;
         public string Content { get; init; }=string.Empty;
         public MessageType Type { get; init; }
         public bool IsEdited { get; init; }

@@ -11,12 +11,11 @@ namespace MessagingService.Domain.Events
         public Guid ChannelId { get; }
         public Guid UserId { get; }
         public string Emoji { get; }
-        public ReactionRemovedEvent(Guid messageId,Guid channelId,Guid userId,string emoji)
+        public ReactionRemovedEvent(Guid messageId,Guid channelId,Guid userId)
         {
             MessageId = messageId;
             ChannelId = channelId;
             UserId = userId;
-            Emoji = emoji;
         }
     }
 }

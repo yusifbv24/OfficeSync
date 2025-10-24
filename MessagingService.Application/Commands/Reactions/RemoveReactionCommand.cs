@@ -8,8 +8,8 @@ namespace MessagingService.Application.Commands.Reactions
 {
     public record RemoveReactionCommand(
         Guid MessageId,
-        Guid UserId,
-        string Emoji):IRequest<Result<bool>>;
+        Guid UserId
+    ):IRequest<Result<bool>>;
 
 
     public class RemoveReactionCommandValidator : AbstractValidator<RemoveReactionCommand>
@@ -20,8 +20,6 @@ namespace MessagingService.Application.Commands.Reactions
                 .NotEmpty().WithMessage("MessageId is required");
             RuleFor(x => x.UserId)
                 .NotEmpty().WithMessage("UserId is required");
-            RuleFor(x => x.Emoji)
-                .NotEmpty().WithMessage("Emoji is required");
         }
     }
 
@@ -59,16 +57,15 @@ namespace MessagingService.Application.Commands.Reactions
                 }
 
                 // Use domain logic to remove reaction
-                message.RemoveReaction(request.UserId,request.Emoji);
+                message.RemoveReaction(request.UserId,request.MessageId);
 
                 await _unitOfWork.Messages.UpdateAsync(message, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 _logger?.LogInformation(
-                    "Reaction {Emoji} removed from message {MessageId} by user {UserId}",
-                    request.Emoji,
+                    "Reaction removed from message {MessageId} by user {UserId}",
                     request.MessageId,
-                    request.UserId);
+                    request.UserId); 
 
                 return Result<bool>.Success(true, "Reaction removed succesfully");
             }

@@ -2,6 +2,7 @@
 using MediatR;
 using MessagingService.Application.Common;
 using MessagingService.Application.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace MessagingService.Application.Commands.Reactions
@@ -47,6 +48,8 @@ namespace MessagingService.Application.Commands.Reactions
         {
             try
             {
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
                 var message = await _unitOfWork.Messages.GetByIdWithIncludesAsync(
                     request.MessageId,
                     cancellationToken,
@@ -57,20 +60,52 @@ namespace MessagingService.Application.Commands.Reactions
                     return Result<bool>.Failure("Message not found");
                 }
 
+                var existingRemovedReaction = message.Reactions.FirstOrDefault(r =>
+                    r.UserId == request.UserId &&
+                    r.Emoji == request.Emoji &&
+                    r.IsRemoved);
+
+                var isRestoring = existingRemovedReaction != null;
+
                 // Use domain logic to add reaction
-                // This enforces business rules (no duplicate reactions,not deleted,etc.)
                 message.AddReaction(request.UserId,request.Emoji);
 
-                await _unitOfWork.Messages.UpdateAsync(message, cancellationToken);
+                var reaction = message.Reactions.FirstOrDefault(r =>
+                    r.UserId == request.UserId &&
+                    r.Emoji == request.Emoji &&
+                    !r.IsRemoved);
+
+                if(reaction != null)
+                {
+                    var context = _unitOfWork.GetContext();
+
+                    if (isRestoring)
+                    {
+                        context.Entry(reaction).State = EntityState.Modified;
+
+                        _logger?.LogInformation(
+                            "Reaction {Emoji} restored on message {MessageId} by user {UserId}",
+                            request.Emoji,
+                            request.MessageId,
+                            request.UserId);
+                    }
+                    else
+                    {
+                        context.Entry(reaction).State = EntityState.Added;
+
+                        _logger?.LogInformation(
+                            "New reaction {Emoji} added to message {MessageId} by user {UserId}",
+                            request.Emoji,
+                            request.MessageId,
+                            request.UserId);
+                    }
+                }
+
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
 
-                _logger?.LogInformation(
-                    "Reaction {Emoji} added to message {MessageId} by user {UserId} ",
-                    request.Emoji,
-                    request.MessageId,
-                    request.UserId);
-
-                return Result<bool>.Success(true, "Reaction added succesfully");
+                return Result<bool>.Success(true,
+                            isRestoring ? "Reaction restored successfully" : "Reaction added successfully");
             }
             catch (InvalidOperationException ex)
             {
