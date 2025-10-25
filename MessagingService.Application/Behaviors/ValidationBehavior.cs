@@ -23,7 +23,7 @@ namespace MessagingService.Application.Behaviors
             CancellationToken cancellationToken)
         {
             // If no validators are registered for this request type, skip validation
-            if (_validators.Any())
+            if (!_validators.Any())
             {
                 return await next();
             }

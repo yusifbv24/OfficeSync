@@ -73,43 +73,61 @@ namespace MessagingService.Application.Queries.Messages
             var totalCount=await _unitOfWork.Messages.CountAsync(query,cancellationToken);
 
             // Apply pagination
-            var pagedQuery = query
+            var messages = await query
                 .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize);
-
-            // Execute query
-            var messages=await _unitOfWork.Messages.ToListAsync(pagedQuery,cancellationToken);
+                .Take(request.PageSize)
+                .Select(m => new MessageListDto
+                {
+                    Id = m.Id,
+                    ChannelId = m.ChannelId,
+                    SenderId = m.SenderId,
+                    SenderName = "",
+                    Content = m.Content,
+                    Type = m.Type,
+                    IsEdited = m.IsEdited,
+                    IsDeleted = m.IsDeleted,
+                    CreatedAt = m.CreatedAt,
+                    ReactionCount = m.Reactions.Count(r => !r.IsRemoved),
+                    AttachmentCount = m.Attachments.Count
+                })
+                .ToListAsync();
 
             //Get sender names
-            var senderIds=messages.Select(m=>m.SenderId).Distinct().ToList();
-            var userNamesDict = new Dictionary<Guid, string>();
-            foreach(var senderId in senderIds)
+            var senderIds= messages
+                .Select(m=>m.SenderId)
+                .Distinct()
+                .ToList();
+
+            Dictionary<Guid, string> userNamesDict;
+
+            if (senderIds.Any())
             {
-                var userResult = await _userServiceClient.GetUserDisplayNameAsync(senderId, cancellationToken);
-                userNamesDict[senderId] = userResult.IsSuccess && userResult.Data != null
-                    ? userResult.Data
+                var batchResult = await _userServiceClient.GetUserDisplayNamesBatchAsync(
+                    senderIds, cancellationToken);
+
+                if(batchResult.IsSuccess && batchResult.Data != null)
+                {
+                    userNamesDict= batchResult.Data;
+                }
+                else
+                {
+                    userNamesDict= new Dictionary<Guid, string>();
+                }
+            }
+            else
+            {
+                userNamesDict = new Dictionary<Guid, string>();
+            }
+
+            foreach (var message in messages)
+            {
+                message.SenderName = userNamesDict.TryGetValue(message.SenderId, out var name)
+                    ? name
                     : "Unknown User";
             }
 
-            // Map to DTOs
-            var dtos = messages.Select(m => new MessageListDto
-            {
-                Id = m.Id,
-                ChannelId = m.ChannelId,
-                SenderId = m.SenderId,
-                SenderName = userNamesDict.GetValueOrDefault(m.SenderId, "Unknown User"),
-                Content = m.Content,
-                Type = m.Type,
-                IsEdited = m.IsEdited,
-                IsDeleted = m.IsDeleted,
-                CreatedAt = m.CreatedAt,
-                ReactionCount = m.Reactions.Count(r => !r.IsRemoved),
-                AttachmentCount = m.Attachments.Count
-            })
-                .ToList();
-
             var pagedResult = PagedResult<MessageListDto>.Create(
-                dtos,
+                messages,
                 totalCount,
                 request.PageNumber,
                 request.PageSize);

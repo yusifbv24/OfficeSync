@@ -90,6 +90,7 @@ namespace MessagingService.API.Controllers
         public async Task<IActionResult> RemoveReaction(
             Guid channelId,
             Guid messageId,
+            string emoji,
             CancellationToken cancellationToken)
         {
             var userIdClaim=User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -99,8 +100,9 @@ namespace MessagingService.API.Controllers
             }
 
             var command = new RemoveReactionCommand(
+                UserId: userId,
                 MessageId: messageId,
-                UserId: userId);
+                Emoji: emoji);
 
             var result=await _mediator.Send(command,cancellationToken);
 

@@ -55,8 +55,6 @@ namespace MessagingService.Application.Queries.Messages
             // Build query using IQueryable - deferred execution
             var query = _unitOfWork.Messages
                 .GetQueryable()
-                .Include(m=>m.Reactions)
-                .Include(m=>m.Attachments)
                 .Where(m => m.ChannelId == request.ChannelId);
 
             // Optionally filter deleted messages
@@ -70,11 +68,6 @@ namespace MessagingService.Application.Queries.Messages
 
             // Get total count - this executes a COUNT query
             var totalCount=await _unitOfWork.Messages.CountAsync(query,cancellationToken);
-
-            // Apply pagination - this modifies the query to use OFFSET/FETCH
-            var pagedQuery= query
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize);
 
             // Execute query - now we hit the database with optimized SQL
             var messages = await query
@@ -100,21 +93,32 @@ namespace MessagingService.Application.Queries.Messages
             // Get uniqiue sender IDs to batch-fetch user names
             var senderIds = messages.Select(m => m.SenderId).Distinct().ToList();
 
-            // Create a dictionary of sender names for efficient lookup
-            var userNamesDict = new Dictionary<Guid, string>();
-            foreach(var senderId in senderIds)
+            Dictionary<Guid, string> userNamesDict;
+
+            if(senderIds.Any())
             {
-                var userResult = await _userServiceClient.GetUserDisplayNameAsync(senderId, cancellationToken);
-                userNamesDict[senderId] = userResult.IsSuccess && userResult.Data != null
-                    ? userResult.Data
-                    : "Unknown User";
+                var batchResult = await _userServiceClient.GetUserDisplayNamesBatchAsync(
+                    senderIds, cancellationToken);
+
+                if(batchResult.IsSuccess&& batchResult.Data != null)
+                {
+                    userNamesDict= batchResult.Data;
+                }
+                else
+                {
+                    userNamesDict = new Dictionary<Guid, string>();
+                }
+            }
+            else
+            {
+                userNamesDict = new Dictionary<Guid, string>();
             }
 
             foreach (var message in messages)
             {
-                message.SenderName = userNamesDict.GetValueOrDefault(
-                    message.SenderId,
-                    "Unknown User");
+                message.SenderName = userNamesDict.TryGetValue(message.SenderId, out var name)
+                    ? name
+                    : "Unknown User";
             }
 
             // Create paged result

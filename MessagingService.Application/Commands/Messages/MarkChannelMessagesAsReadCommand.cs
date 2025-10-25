@@ -34,6 +34,7 @@ namespace MessagingService.Application.Commands.Messages
         {
             try
             {
+                await _unitOfWork.BeginTransactionAsync(cancellationToken);
                 // Get all unread messages in the channel
                 var query = _unitOfWork.Messages
                     .GetQueryable()

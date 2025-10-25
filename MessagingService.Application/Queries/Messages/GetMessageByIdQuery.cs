@@ -46,7 +46,12 @@ namespace MessagingService.Application.Queries.Messages
                 .Where(m => m.Id == request.MessageId);
 
             // Execute query - now we hit the database
-            var message=await _unitOfWork.Messages.FirstOrDefaultAsync(query, cancellationToken);
+            var message = await _unitOfWork.Messages.GetByIdWithIncludesAsync(
+                request.MessageId,
+                cancellationToken,
+                m => m.Reactions,
+                m => m.Attachments,
+                m => m.ReadReceipts);
 
             if (message == null)
             {

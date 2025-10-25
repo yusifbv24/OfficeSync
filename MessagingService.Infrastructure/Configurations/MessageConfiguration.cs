@@ -95,7 +95,8 @@ namespace MessagingService.Infrastructure.Configurations
 
             // Composite index for the most common query: get messages from channel ordered by time
             builder.HasIndex(e => new { e.ChannelId, e.CreatedAt, e.IsDeleted })
-                .HasDatabaseName("ix_messages_channel_created_deleted");
+                .HasDatabaseName("ix_messages_channel_created_deleted")
+                .IncludeProperties(p => p.Id);
 
 
             // Index for threading (finding replies)

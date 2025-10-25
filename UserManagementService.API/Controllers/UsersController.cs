@@ -227,5 +227,47 @@ namespace UserManagementService.API.Controllers
             _logger.LogInformation("User {Id} deleted by {DeletedBy}", id, deletedById);
             return Ok(result);
         }
+
+
+
+
+        /// </summary>
+        /// <param name="request">Array of user IDs to fetch</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>Dictionary mapping UserId to string</returns>
+        /// </summary>
+        [HttpPost("batch")]
+        [ProducesResponseType(typeof(Dictionary<Guid,string>),StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetUsersBatch(
+            [FromBody] BatchUsersRequestDto request,
+            CancellationToken cancellationToken)
+        {
+            if (request?.UserIds == null || request.UserIds.Length == 0)
+            {
+                return BadRequest(new { Message = "UserIds array is required and cannot be empty" });
+            }
+
+            // Limit batch size to prevent abuse and maintain performance
+            // 100 users is a reasonable limit that balances flexibility with performance
+            if (request.UserIds.Length > 100)
+            {
+                return BadRequest(new { Message = "Batch size cannot exceed 100 users" });
+            }
+
+            var query=new GetUserProfilesBatchQuery(request.UserIds);
+            var result=await _mediator.Send(query, cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+            _logger?.LogInformation(
+                "Batch fetched {Count} users from {RequestedCount} IDs",
+                result.Data?.Count ?? 0,
+                request.UserIds.Length);
+
+            return Ok(result);
+        }
     }
 }

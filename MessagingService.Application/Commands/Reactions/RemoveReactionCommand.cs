@@ -7,8 +7,9 @@ using Microsoft.Extensions.Logging;
 namespace MessagingService.Application.Commands.Reactions
 {
     public record RemoveReactionCommand(
+        Guid UserId,
         Guid MessageId,
-        Guid UserId
+        string Emoji
     ):IRequest<Result<bool>>;
 
 
@@ -20,6 +21,8 @@ namespace MessagingService.Application.Commands.Reactions
                 .NotEmpty().WithMessage("MessageId is required");
             RuleFor(x => x.UserId)
                 .NotEmpty().WithMessage("UserId is required");
+            RuleFor(x => x.Emoji)
+                .NotEmpty().WithMessage("Emoji is required");
         }
     }
 
@@ -57,7 +60,7 @@ namespace MessagingService.Application.Commands.Reactions
                 }
 
                 // Use domain logic to remove reaction
-                message.RemoveReaction(request.UserId,request.MessageId);
+                message.RemoveReaction(request.UserId,request.Emoji);
 
                 await _unitOfWork.Messages.UpdateAsync(message, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);

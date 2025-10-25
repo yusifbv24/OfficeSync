@@ -100,6 +100,92 @@ namespace MessagingService.Infrastructure.HttpClients
         }
 
 
+
+        public async Task<Result<Dictionary<Guid, string>>> GetUserDisplayNamesBatchAsync(
+            IEnumerable<Guid> userIds,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var userIdArray = userIds.Distinct().ToArray();
+
+                // Early return for empty requests - prevents unnecessary HTTP calls
+                if (userIdArray.Length == 0)
+                {
+                    _logger?.LogDebug("Batch user fetch called with empty user ID list");
+                    return Result<Dictionary<Guid, string>>.Success(
+                        new Dictionary<Guid, string>());
+                }
+
+                var requestBody = new { UserIds = userIdArray };
+
+                await AddAuthorizationHeaderAsync();
+
+                var response = await _httpClient.PostAsJsonAsync(
+                    "/api/users/batch",
+                    requestBody,
+                    _jsonOptions,
+                    cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return Result<Dictionary<Guid, string>>.Failure(
+                            "Failed to fetch users in batch");
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<BatchUserResponse>(
+                    _jsonOptions, cancellationToken);
+
+                if (result?.Data == null)
+                {
+                    return Result<Dictionary<Guid, string>>.Success(
+                        new Dictionary<Guid, string>());
+                }
+
+                var displayNames = result.Data.ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value);
+
+                return Result<Dictionary<Guid, string>>.Success(displayNames);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                // Network-level errors (DNS failure, connection refused, etc.)
+                _logger?.LogError(
+                    httpEx,
+                    "Network error during batch user fetch for {Count} users",
+                    userIds.Count());
+
+                return Result<Dictionary<Guid, string>>.Failure(
+                    "Network error communicating with User Management Service");
+            }
+            catch (TaskCanceledException tcEx)
+            {
+                // Request timeout or cancellation
+                _logger?.LogError(
+                    tcEx,
+                    "Timeout or cancellation during batch user fetch for {Count} users",
+                    userIds.Count());
+
+                return Result<Dictionary<Guid, string>>.Failure(
+                    "Request timeout or cancelled");
+            }
+            catch (Exception ex)
+            {
+                // Catch-all for any other unexpected errors
+                _logger?.LogError(
+                    ex,
+                    "Unexpected error during batch user fetch for {Count} users",
+                    userIds.Count());
+
+                return Result<Dictionary<Guid, string>>.Failure(
+                    "Error communicating with User Management Service");
+            }
+        }
+
+
+
+
         private async Task AddAuthorizationHeaderAsync()
         {
             var authHeader = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].FirstOrDefault();

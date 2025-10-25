@@ -25,5 +25,15 @@ namespace MessagingService.Application.Interfaces
         Task<Result<string>> GetUserDisplayNameAsync(
             Guid userId,
             CancellationToken cancellationToken= default);
+
+
+
+        /// <summary>
+        /// Batch fetch multiple user display names in a single HTTP call.
+        /// This is a critical performance optimization that should be used whenever
+        /// you need to fetch display names for multiple users.
+        Task<Result<Dictionary<Guid, string>>> GetUserDisplayNamesBatchAsync(
+            IEnumerable<Guid> userIds,
+            CancellationToken cancellationToken = default);
     }
 }
