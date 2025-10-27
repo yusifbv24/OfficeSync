@@ -30,22 +30,18 @@ namespace FileService.API.Controllers
         [HttpPost]
         [RequestSizeLimit(104857600)] //100 Mb max file size
         public async Task<IActionResult> UploadFile(
-            [FromForm] IFormFile file,
-            [FromForm] Guid? channelId,
-            [FromForm] Guid? messageId,
-            [FromForm] FileAccessLevel accessLevel=FileAccessLevel.Private,
-            [FromForm] string? description=null,
+            UploadFileRequest request,
             CancellationToken cancellationToken = default)
         {
             var userId = GetUserIdFromClaims();
 
             var command = new UploadFileCommand(
-                File: file,
+                File: request.File,
                 UploadedBy: userId,
-                ChannelId: channelId,
-                MessageId: messageId,
-                AccessLevel: accessLevel,
-                Description: description);
+                ChannelId: request.ChannelId,
+                MessageId: request.MessageId,
+                AccessLevel: request.AccessLevel,
+                Description: request.Description);
 
             var result = await _mediator.Send(command, cancellationToken);
 

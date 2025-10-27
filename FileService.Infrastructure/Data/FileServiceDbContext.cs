@@ -36,6 +36,12 @@ namespace FileService.Infrastructure.Data
             // This is extremely useful because it means you don't have to remember to
             // add ".Where(f => !f.IsDeleted)" to every query - it happens automatically
             modelBuilder.Entity<File>().HasQueryFilter(f => !f.IsDeleted);
+
+
+            // Add matching filter for FileAccess
+            // This ensures FileAccess records are only shown when their parent File is not deleted
+            modelBuilder.Entity<FileAccess>().HasQueryFilter(fa => !fa.File.IsDeleted);
+
         }
 
         /// <summary>

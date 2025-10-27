@@ -199,7 +199,6 @@ try
     app.MapHealthChecks("/health");
 
     Log.Information("Starting Channel Service on {Environment}", app.Environment.EnvironmentName);
-    Log.Information("Database: PostgreSQL");
     Log.Information("Service is listening on: {Urls}", string.Join(", ", app.Urls));
 
     app.Run();
