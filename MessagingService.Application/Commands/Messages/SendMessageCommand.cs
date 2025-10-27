@@ -22,7 +22,7 @@ namespace MessagingService.Application.Commands.Messages
         MessageType Type=MessageType.Text,
         Guid? ParentMessageId=null,
         List<Guid>? AttachmentFileIds=null
-        ):IRequest<Result<MessageDto>>;
+    ):IRequest<Result<MessageDto>>;
 
 
     public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
@@ -54,6 +54,7 @@ namespace MessagingService.Application.Commands.Messages
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IChannelServiceClient _channelServiceClient;
+        private readonly IFileServiceClient _fileServiceClient;
         private readonly IUserServiceClient _userServiceClient;
         private readonly IMapper _mapper;
         private readonly ILogger<SendMessageCommandHandler> _logger;
@@ -61,12 +62,14 @@ namespace MessagingService.Application.Commands.Messages
         public SendMessageCommandHandler(
             IUnitOfWork unitOfWork,
             IChannelServiceClient channelServiceClient,
+            IFileServiceClient fileServiceClient,
             IUserServiceClient userServiceClient,
             IMapper mapper,
             ILogger<SendMessageCommandHandler> logger)
         {
             _unitOfWork = unitOfWork;
             _channelServiceClient= channelServiceClient;
+            _fileServiceClient= fileServiceClient;
             _userServiceClient= userServiceClient;
             _mapper= mapper;
             _logger= logger;
@@ -78,8 +81,7 @@ namespace MessagingService.Application.Commands.Messages
         {
             try
             {
-                // Verify the user is a member of the channel
-                // This is a cross-service call to Channel Service
+                // Step 1: Verify user is a member of the channel
                 var isMember = await _channelServiceClient.IsUserMemberOfChannelAsync(
                     request.ChannelId,
                     request.SenderId,
@@ -87,10 +89,15 @@ namespace MessagingService.Application.Commands.Messages
 
                 if (!isMember.IsSuccess || !isMember.Data)
                 {
-                    return Result<MessageDto>.Failure("User is not a member of this channel");
+                    _logger?.LogWarning(
+                            "User {UserId} attempted to send message to channel {ChannelId} but is not a member",
+                            request.SenderId,
+                            request.ChannelId);
+
+                    return Result<MessageDto>.Failure("You are not a member of this channel");
                 }
 
-                // If this is a reply,verify parent message exists
+                // Step 2: If this is a reply, verify parent message exists
                 if (request.ParentMessageId.HasValue)
                 {
                     var parentExists = await _unitOfWork.Messages.ExistsAsync(
@@ -99,24 +106,75 @@ namespace MessagingService.Application.Commands.Messages
 
                     if (!parentExists)
                     {
+                        _logger?.LogWarning(
+                            "User {UserId} attempted to reply to non-existent message {ParentMessageId}",
+                            request.SenderId,
+                            request.ParentMessageId);
                         return Result<MessageDto>.Failure("Parent message not found");
                     }
                 }
 
+                // Step 3: Validate file attachments
+                // Files must already exist in FileService and user must have access
+                List<Guid>? validateFileIds = null;
+                if(request.AttachmentFileIds!=null && request.AttachmentFileIds.Any())
+                {
+                    _logger.LogDebug(
+                        "Validating {Count} file attachments for message",
+                        request.AttachmentFileIds.Count);
 
-                // Create value object with validation
+                    var fileValidation = await _fileServiceClient.ValidateFileAccessBatchAsync(
+                        request.AttachmentFileIds,
+                        request.SenderId,
+                        cancellationToken);
+
+                    if (!fileValidation.IsSuccess)
+                    {
+                        _logger.LogError(
+                            "File validation failed for user {UserId}:{Error}",
+                            request.SenderId,
+                            fileValidation.Message);
+
+                        return Result<MessageDto>.Failure(
+                            "Unable to validate file attachments. Please ensure all files exist and you have access. ");
+                    }
+
+                    validateFileIds = fileValidation.Data;
+
+                    // Check if any files were rejected
+                    if (validateFileIds != null)
+                    {
+                        var rejectedFiles = request.AttachmentFileIds
+                        .Except(validateFileIds)
+                        .ToList();
+
+                        if (rejectedFiles.Any())
+                        {
+                            _logger.LogWarning(
+                                "User {UserId} attempted to attach files they dont have access to : {FileIds}",
+                                request.SenderId,
+                                string.Join(",", rejectedFiles));
+                            return Result<MessageDto>.Failure(
+                                $"You don't have access to {rejectedFiles.Count} of the attached files. " +
+                                "Please remove them and try again.");
+                        }
+                    }
+                }
+
+
+                // Step 4: Create message content with validation
                 var content = MessageContent.Create(request.Content);
 
-                // Create message using domain model
+                // Step 5: Create the message entity
                 var message = Message.Create(
                     channelId: request.ChannelId,
                     senderId: request.SenderId,
                     content: content,
                     type: request.Type,
                     parentMessageId: request.ParentMessageId,
-                    attachmentFileIds: request.AttachmentFileIds);
+                    attachmentFileIds: validateFileIds);
 
-                // Persist to a database
+                // Step 6: Persist to a database
                 await _unitOfWork.Messages.AddAsync(message, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -129,20 +187,17 @@ namespace MessagingService.Application.Commands.Messages
                     message.GetAttachmentCount());
 
                 // Get sender name for the DTO
-                var senderName = await GetUserDisplayNameAsync(request.SenderId, cancellationToken);
-
-                // Map to DTO
-                var dto = _mapper.Map<MessageDto>(message);
-                dto=dto with { SenderName=senderName };
+                var dto = await BuildMessageDtoAsync(message, request.SenderId, cancellationToken);
 
                 return Result<MessageDto>.Success(dto, "Message sent succesfully");
             }
             catch (ArgumentException ex)
             {
                 // Validation errors from value objects
+                _logger.LogWarning(ex, "Validation error sending message");
                 return Result<MessageDto>.Failure(ex.Message);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger?.LogError(ex, "Error sending message");
                 return Result<MessageDto>.Failure("An error occured while sending the message");
@@ -154,6 +209,52 @@ namespace MessagingService.Application.Commands.Messages
         {
             var result=await _userServiceClient.GetUserDisplayNameAsync(userId, cancellationToken);
             return result.IsSuccess && result.Data != null ? result.Data : "Unknown User";
+        }
+
+
+
+        private async Task<MessageDto> BuildMessageDtoAsync(
+            Message message,
+            Guid requestedBy,
+            CancellationToken cancellationToken)
+        {
+            // Get sender name
+            var senderName = await GetUserDisplayNameAsync(message.SenderId, cancellationToken);
+
+            // Map basic message data
+            var dto = _mapper.Map<MessageDto>(message);
+            dto = dto with { SenderName = senderName };
+
+            // Fetch file details from File Service if message has attachments
+            if (message.GetAttachmentCount() > 0)
+            {
+                var fileDetailsResult = await _fileServiceClient.GetFileDetailsBatchAsync(
+                    message.AttachmentFields.ToList(),
+                    requestedBy,
+                    cancellationToken);
+
+                if (fileDetailsResult.IsSuccess && fileDetailsResult.Data != null)
+                {
+                    // Convert dictionary to list, preserving order of FileIds
+                    var fileDetails = message.AttachmentFields
+                        .Select(fileId => fileDetailsResult.Data.GetValueOrDefault(fileId))
+                        .Where(details => details != null)
+                        .ToList();
+
+                    dto = dto with { Attachments = fileDetails! };
+                }
+                else
+                {
+                    _logger?.LogWarning(
+                        "Failed to fetch file details for message {MessageId} : {Error}",
+                        message.Id,
+                        fileDetailsResult.Message);
+
+                    // Still return the message, just without file details
+                    dto = dto with { Attachments = [] };
+                }
+            }
+            return dto;
         }
     }
 }

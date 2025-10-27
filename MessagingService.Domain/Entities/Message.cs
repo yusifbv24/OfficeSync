@@ -17,8 +17,7 @@ namespace MessagingService.Domain.Entities
         private readonly List<MessageReaction> _reactions = [];
         private readonly List<MessageReadReceipt> _readReceipts = [];
 
-        // Simple list of FileIds that reference files in File Service
-        // This is stored as JSON in database or in a separate simple table
+        // To get file details (name, size, URL), you must call File Service.
         private readonly List<Guid> _attachmentFileIds = [];
 
         // Private setters prevent external modification - all changes must go through methods
@@ -43,6 +42,9 @@ namespace MessagingService.Domain.Entities
         public IReadOnlyCollection<MessageReaction> Reactions=>_reactions.AsReadOnly();
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         public IReadOnlyCollection<MessageReadReceipt> ReadReceipts=>_readReceipts.AsReadOnly();
+
+
+        // This is the ONLY file-related property: just the IDs
         public IReadOnlyCollection<Guid> AttachmentFields=>_attachmentFileIds.AsReadOnly();
 
         // Private constructor for EF Core - prevents direct instantiation
@@ -80,7 +82,7 @@ namespace MessagingService.Domain.Entities
                     message._attachmentFileIds.Add(fileId);
                 }
 
-                if(message.Type==MessageType.Text && attachmentFileIds.Any())
+                if(message.Type==MessageType.Text)
                 {
                     message.Type = MessageType.File;
                 }
@@ -224,6 +226,7 @@ namespace MessagingService.Domain.Entities
 
 
 
+
         /// <summary>
         /// Add a file reference to this message.
         /// 
@@ -262,6 +265,7 @@ namespace MessagingService.Domain.Entities
 
 
 
+
         /// <summary>
         /// Remove a file reference from this message.
         /// 
@@ -280,101 +284,15 @@ namespace MessagingService.Domain.Entities
 
 
 
-        /// <summary>
-        /// Check if a specific file is attached to this message.
-        /// </summary>
-        public bool HasFileAttached(Guid fileId)
-        {
-            return _attachmentFileIds.Contains(fileId);
-        }
+        public bool HasFileAttached(Guid fileId) => _attachmentFileIds.Contains(fileId);
+        public int GetAttachmentCount() => _attachmentFileIds.Count;
+        public bool HasUserRead(Guid userId) => _readReceipts.Any(r => r.UserId == userId);
+        public IEnumerable<Guid> GetReadByUsers() => _readReceipts.Select(r => r.UserId);
+        public int GetReadCount() => _readReceipts.Count;
+        public bool HasUserReacted(Guid userId, string emoji) =>
+            _reactions.Any(r => r.UserId == userId && r.Emoji == emoji && !r.IsRemoved);
 
-        /// <summary>
-        /// Get the count of attached files.
-        /// </summary>
-        public int GetAttachmentCount()
-        {
-            return _attachmentFileIds.Count;
-        }
-
-
-
-        /// <summary>
-        /// Mark message as read by a user.
-        /// If already read, updates the read time.
-        /// </summary>
-        public void MarkAsRead(Guid userId)
-        {
-            // Dont allow sender to mark their own message as read 
-            if (userId == SenderId)
-                return;
-
-            // Check if user already read this message
-            var existingReceipt = _readReceipts.FirstOrDefault(r => r.UserId == userId);
-
-            if (existingReceipt != null)
-            {
-                // Update read time
-                existingReceipt.UpdateReadTime();
-            }
-            else
-            {
-                // Create new read receipt
-                var receipt = MessageReadReceipt.Create(Id, userId);
-                _readReceipts.Add(receipt);
-            }
-            UpdateTimestamp();
-        }
-
-
-
-
-
-        /// <summary>
-        /// Check if a specific user has read this message.
-        /// </summary>
-        public bool HasUserRead(Guid userId)
-        {
-            return _readReceipts.Any(r => r.UserId == userId);
-        }
-
-
-
-        /// <summary>
-        /// Get all users who have read this message.
-        /// </summary>
-        public IEnumerable<Guid> GetReadByUsers()
-        {
-            return _readReceipts.Select(r => r.UserId);
-        }
-
-
-
-        /// <summary>
-        /// Get the count of users who have read this message.
-        /// </summary>
-        public int GetReadCount()
-        {
-            return _readReceipts.Count;
-        }
-
-
-
-
-        /// <summary>
-        /// Check if a specific user has reacted with a specific emoji.
-        /// </summary>
-        public bool HasUserReacted(Guid userId,string emoji)
-        {
-            return _reactions.Any(r=>r.UserId==userId && r.Emoji==emoji && !r.IsRemoved);
-        }
-
-        private void AddDomainEvent(DomainEvent domainEvent)
-        {
-            _domainEvents.Add(domainEvent);
-        }
-        public void ClearDomainEvents()
-        {
-            _domainEvents.Clear();
-        }
+        private void AddDomainEvent(DomainEvent domainEvent) => _domainEvents.Add(domainEvent);
+        public void ClearDomainEvents() => _domainEvents.Clear();
     }
 }

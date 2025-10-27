@@ -29,5 +29,6 @@ namespace MessagingService.Application.Messages
         /// Number of attachments (not full attachment details).
         /// </summary>
         public int AttachmentCount { get; init; }
+        public bool HasAttachments => AttachmentCount > 0;
     }
 }

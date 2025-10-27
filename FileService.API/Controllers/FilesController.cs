@@ -1,6 +1,7 @@
 ﻿using FileService.Application.Commands;
 using FileService.Application.DTOs;
 using FileService.Application.Queries;
+using FileService.Domain.Common;
 using FileService.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -404,6 +405,277 @@ namespace FileService.API.Controllers
 
 
 
+
+        /// <summary>
+        /// Batch endpoint to get multiple file details in a single request.
+        /// 
+        /// PERFORMANCE CRITICAL:
+        /// This endpoint is essential for the Messaging Service to efficiently
+        /// fetch file details when displaying messages with attachments.
+        /// 
+        /// Without this, displaying 50 messages with 100 total attachments would
+        /// require 100 separate HTTP calls. With this endpoint, it's just ONE call.
+        /// 
+        /// HTTP GET /api/files/batch?ids=guid1&ids=guid2&ids=guid3
+        /// 
+        /// Returns only files the requester has access to.
+        /// Files that don't exist or are inaccessible are silently omitted.
+        /// </summary>
+        [HttpGet("batch/all")]
+        [ProducesResponseType(typeof(Result<List<FileDto>>), 200)]
+        public async Task<IActionResult> GetFilesBatch(
+            [FromQuery] List<Guid> ids,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims();
+
+                // Remove duplicates and empty GUIDs
+                var distinctIds = ids.Where(id => id != Guid.Empty).Distinct().ToList();
+
+                if (!distinctIds.Any())
+                {
+                    return Ok(new
+                    {
+                        IsSuccess = true,
+                        Data = new List<FileDto>(),
+                        Message = "No valid file IDs provided"
+                    });
+                }
+
+                // Limit batch size to prevent abuse
+                if (distinctIds.Count > 100)
+                {
+                    return BadRequest(new
+                    {
+                        IsSuccess = false,
+                        Message = "Maximum 100 files per batch request"
+                    });
+                }
+
+                var query = new GetFilesBatchQuery(distinctIds, userId);
+                var result = await _mediator.Send(query, cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(new
+                    {
+                        IsSuccess = false,
+                        Message = result.Error
+                    });
+                }
+
+                return Ok(new
+                {
+                    IsSuccess = true,
+                    Data = result.Value,
+                    Message = $"Retrieved {result.Value?.Count ?? 0} files"
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    IsSuccess = false,
+                    Message = "An error occurred processing the request"
+                });
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// Link a file to a message (called by Messaging Service).
+        /// 
+        /// OPTIONAL ENDPOINT:
+        /// This allows File Service to track which files are attached to which messages.
+        /// Useful for:
+        /// - Showing "attached to message in channel X" in file listings
+        /// - Preventing deletion of files that are referenced in messages
+        /// - Analytics about file usage
+        /// 
+        /// HTTP POST /api/files/{id}/link-message
+        /// Body: { "messageId": "guid", "channelId": "guid" }
+        /// </summary>
+        [HttpPost("{id:guid}/link-message")]
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> LinkFileToMessage(
+            Guid id,
+            [FromBody] LinkFileToMessageRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var userId = GetUserIdFromClaims();
+
+                var command = new LinkFileToMessageCommand(
+                    FileId: id,
+                    MessageId: request.MessageId,
+                    ChannelId: request.ChannelId,
+                    UserId: userId);
+
+                var result = await _mediator.Send(command, cancellationToken);
+
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(new { error = result.Error });
+                }
+
+                return Ok(new { message = "File linked to message successfully" });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { error = "An error occurred" });
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// Get metadata for multiple files by their IDs (batch operation for performance)
+        /// This is called by the Messaging Service when displaying messages with attachments
+        /// </summary>
+        /// <param name="fileIds">Comma-separated list of file IDs (e.g., "123,456,789")</param>
+        /// <returns>List of file metadata DTOs</returns>
+        [HttpGet("batch")]
+        [ProducesResponseType(typeof(List<FileMetadataDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<List<FileMetadataDto>>> GetFilesByIds(
+            [FromQuery] string fileIds)
+        {
+            try
+            {
+                // Parse the comma-separated file IDs
+                if (string.IsNullOrWhiteSpace(fileIds))
+                {
+                    return BadRequest(new { error = "fileIds parameter is required" });
+                }
+
+                var fileIdsList = fileIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(id => id.Trim())
+                    .Where(id => Guid.TryParse(id, out _))
+                    .Select(Guid.Parse)
+                    .ToList();
+
+                if (!fileIdsList.Any())
+                {
+                    return BadRequest(new { error = "No valid file IDs provided" });
+                }
+
+                // Limit batch size to prevent abuse
+                if (fileIdsList.Count > 100)
+                {
+                    return BadRequest(new { error = "Maximum 100 files per batch request" });
+                }
+
+                var query = new GetFilesByIdsQuery
+                {
+                    FileIds = fileIdsList,
+                    RequestingUserId = GetUserIdFromClaims()
+                };
+
+                var result = await _mediator.Send(query);
+
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { error = "An error occurred while retrieving file metadata" });
+            }
+        }
+
+
+
+        /// <summary>
+        /// Validate that a user has access to multiple files
+        /// This is called by the Messaging Service before creating a message with file attachments
+        /// </summary>
+        /// <param name="request">Validation request with file IDs and user ID</param>
+        /// <returns>Validation result indicating which files are accessible</returns>
+        [HttpPost("validate-access")]
+        [ProducesResponseType(typeof(ValidateFileAccessResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<ValidateFileAccessResponse>> ValidateFileAccess(
+            [FromBody] ValidateFileAccessRequest request)
+        {
+            try
+            {
+                if (request == null || !request.FileIds.Any())
+                {
+                    return BadRequest(new { error = "FileIds are required" });
+                }
+
+                // Limit batch size to prevent abuse
+                if (request.FileIds.Count > 100)
+                {
+                    return BadRequest(new { error = "Maximum 100 files per validation request" });
+                }
+
+                var command = new ValidateFileAccessCommand
+                {
+                    FileIds = request.FileIds,
+                    RequestingUserId = request.UserId ?? GetUserIdFromClaims(),
+                    ChannelId = request.ChannelId // Optional: for channel-specific validation
+                };
+
+                var result = await _mediator.Send(command);
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { error = "An error occurred while validating file access" });
+            }
+        }
+
+        /// <summary>
+        /// Get basic metadata for a single file (lightweight endpoint)
+        /// This can be used by any service that needs to check file existence and basic info
+        /// </summary>
+        /// <param name="fileId">The file ID</param>
+        /// <returns>File metadata</returns>
+        [HttpGet("{fileId}/metadata")]
+        [ProducesResponseType(typeof(FileMetadataDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<FileMetadataDto>> GetFileMetadata(Guid fileId)
+        {
+            try
+            {
+                var query = new GetFileMetadataQuery
+                {
+                    FileId = fileId,
+                    RequestingUserId = GetUserIdFromClaims()
+                };
+
+                var result = await _mediator.Send(query);
+
+                if (result == null)
+                {
+                    return NotFound(new { error = $"File {fileId} not found" });
+                }
+
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { error = "An error occurred while retrieving file metadata" });
+            }
+        }
+
+
         private Guid GetUserIdFromClaims()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -416,5 +688,77 @@ namespace FileService.API.Controllers
 
             return userId;
         }
+
+
+        #region Request/Response Models
+        /// <summary>
+        /// Request model for validating file access
+        /// </summary>
+        public record ValidateFileAccessRequest
+        {
+            /// <summary>
+            /// List of file IDs to validate
+            /// </summary>
+            public List<Guid> FileIds { get; set; } = new();
+
+            /// <summary>
+            /// Optional: User ID to validate access for (if not provided, uses current user from JWT)
+            /// </summary>
+            public Guid? UserId { get; set; }
+
+            /// <summary>
+            /// Optional: Channel ID for channel-specific file access validation
+            /// </summary>
+            public Guid? ChannelId { get; set; }
+        }
+
+        /// <summary>
+        /// Response model for file access validation
+        /// </summary>
+        public record ValidateFileAccessResponse
+        {
+            /// <summary>
+            /// List of file IDs that the user has access to
+            /// </summary>
+            public List<Guid> AccessibleFileIds { get; set; } = new();
+
+            /// <summary>
+            /// List of file IDs that the user does NOT have access to
+            /// </summary>
+            public List<Guid> InaccessibleFileIds { get; set; } = new();
+
+            /// <summary>
+            /// Overall validation result
+            /// </summary>
+            public bool AllFilesAccessible => !InaccessibleFileIds.Any();
+
+            /// <summary>
+            /// Optional validation message
+            /// </summary>
+            public string? Message { get; set; }
+        }
+
+        /// <summary>
+        /// DTO for file metadata (returned by batch and metadata endpoints)
+        /// </summary>
+        public record FileMetadataDto
+        {
+            public Guid FileId { get; set; }
+            public string FileName { get; set; } = string.Empty;
+            public string FileUrl { get; set; } = string.Empty;
+            public string? ThumbnailUrl { get; set; }
+            public long FileSize { get; set; }
+            public string MimeType { get; set; } = string.Empty;
+            public string? FileHash { get; set; }
+            public DateTime UploadedAt { get; set; }
+            public Guid UploadedBy { get; set; }
+            public bool IsDeleted { get; set; }
+
+            /// <summary>
+            /// Access level: Private, Public, ChannelMembers, Restricted
+            /// </summary>
+            public string AccessLevel { get; set; } = "Private";
+        }
+        #endregion
     }
 }

@@ -30,9 +30,10 @@ namespace MessagingService.Application.Messages
 
 
         /// <summary>
-        /// File attachments on this message.
+        /// File attachments with full details fetched from File Service.
+        /// These are NOT stored in Messaging database - they're enriched at query time.
         /// </summary>
-        public List<MessageAttachmentDto> Attachments { get; init; } = [];
+        public List<FileAttachmentDto> Attachments { get; init; } = [];
 
 
         /// <summary>
