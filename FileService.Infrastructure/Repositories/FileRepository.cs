@@ -3,6 +3,7 @@ using FileService.Application.Interfaces;
 using FileService.Domain.Enums;
 using FileService.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using File = FileService.Domain.Entities.File;
 
 namespace FileService.Infrastructure.Repositories

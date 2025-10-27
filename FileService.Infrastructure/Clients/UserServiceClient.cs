@@ -59,7 +59,7 @@ namespace FileService.Infrastructure.Clients
 
                 // Call the User Management Service API endpoint
                 var response = await _httpClient.GetAsync(
-                    "/api/users/{userId}",
+                    $"/api/users/by-userid/{userId}",
                     cancellationToken);
 
                 if (!response.IsSuccessStatusCode)

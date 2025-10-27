@@ -102,6 +102,7 @@ namespace FileService.Application.Commands
             // We dont want to grant access to non-existent users
             var targetUserProfile = await _userServiceClient
                 .GetUserProfileAsync(request.UserId, cancellationToken);
+
             if(targetUserProfile == null)
             {
                 return Result<bool>.Failure("Target user not found");

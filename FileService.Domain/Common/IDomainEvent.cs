@@ -1,4 +1,6 @@
-﻿namespace FileService.Domain.Common
+﻿using MediatR;
+
+namespace FileService.Domain.Common
 {
     /// <summary>
     /// Marker interface for all domain events in the system.
@@ -9,7 +11,7 @@
     /// Domain events follow the event sourcing pattern and are immutable,
     /// which is why they are typically implemented as records rather than classes.
     /// </summary>
-    public interface IDomainEvent
+    public interface IDomainEvent:INotification
     {
     }
 }

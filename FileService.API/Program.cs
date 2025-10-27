@@ -142,7 +142,7 @@ try
         cfg.AddProfile<MappingProfile>();
     }, typeof(MappingProfile).Assembly);
 
-
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IFileRepository, FileRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
     builder.Services.AddScoped<IFileStorageService, FileStorageService>();
