@@ -111,11 +111,6 @@ namespace MessagingService.Infrastructure.Configurations
 
 
             builder.Metadata
-                .FindNavigation(nameof(Message.AttachmentFields))!
-                .SetPropertyAccessMode(PropertyAccessMode.Field);
-
-
-            builder.Metadata
                 .FindNavigation(nameof(Message.ReadReceipts))!
                 .SetPropertyAccessMode(PropertyAccessMode.Field);
 

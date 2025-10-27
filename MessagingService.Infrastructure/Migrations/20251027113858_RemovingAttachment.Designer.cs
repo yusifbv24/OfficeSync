@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MessagingService.Infrastructure.Migrations
 {
     [DbContext(typeof(MessagingDbContext))]
-    [Migration("20251024161246_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251027113858_RemovingAttachment")]
+    partial class RemovingAttachment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -103,66 +103,9 @@ namespace MessagingService.Infrastructure.Migrations
                     b.HasIndex("ChannelId", "CreatedAt", "IsDeleted")
                         .HasDatabaseName("ix_messages_channel_created_deleted");
 
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex("ChannelId", "CreatedAt", "IsDeleted"), new[] { "Id" });
+
                     b.ToTable("messages", (string)null);
-                });
-
-            modelBuilder.Entity("MessagingService.Domain.Entities.MessageAttachment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<Guid>("FileId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("file_id");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("file_name");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint")
-                        .HasColumnName("file_size");
-
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("file_url");
-
-                    b.Property<Guid>("MessageId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("message_id");
-
-                    b.Property<string>("MimeType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("mime_type");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FileId")
-                        .HasDatabaseName("ix_message_attachments_file_id");
-
-                    b.HasIndex("MessageId")
-                        .HasDatabaseName("ix_message_attachments_message_id");
-
-                    b.HasIndex("MimeType")
-                        .HasDatabaseName("ix_message_attachments_mime_type");
-
-                    b.ToTable("message_attachments", (string)null);
                 });
 
             modelBuilder.Entity("MessagingService.Domain.Entities.MessageReaction", b =>
@@ -280,17 +223,6 @@ namespace MessagingService.Infrastructure.Migrations
                     b.Navigation("ParrentMessage");
                 });
 
-            modelBuilder.Entity("MessagingService.Domain.Entities.MessageAttachment", b =>
-                {
-                    b.HasOne("MessagingService.Domain.Entities.Message", "Message")
-                        .WithMany("Attachments")
-                        .HasForeignKey("MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Message");
-                });
-
             modelBuilder.Entity("MessagingService.Domain.Entities.MessageReaction", b =>
                 {
                     b.HasOne("MessagingService.Domain.Entities.Message", "Message")
@@ -315,8 +247,6 @@ namespace MessagingService.Infrastructure.Migrations
 
             modelBuilder.Entity("MessagingService.Domain.Entities.Message", b =>
                 {
-                    b.Navigation("Attachments");
-
                     b.Navigation("Reactions");
 
                     b.Navigation("ReadReceipts");

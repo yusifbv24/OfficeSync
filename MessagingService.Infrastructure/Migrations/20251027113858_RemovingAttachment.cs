@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MessagingService.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class RemovingAttachment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,31 +37,6 @@ namespace MessagingService.Infrastructure.Migrations
                         principalTable: "messages",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "message_attachments",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    message_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    file_name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    file_url = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    file_size = table.Column<long>(type: "bigint", nullable: false),
-                    mime_type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_message_attachments", x => x.id);
-                    table.ForeignKey(
-                        name: "FK_message_attachments_messages_message_id",
-                        column: x => x.message_id,
-                        principalTable: "messages",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -109,21 +84,6 @@ namespace MessagingService.Infrastructure.Migrations
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_message_attachments_file_id",
-                table: "message_attachments",
-                column: "file_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_message_attachments_message_id",
-                table: "message_attachments",
-                column: "message_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_message_attachments_mime_type",
-                table: "message_attachments",
-                column: "mime_type");
 
             migrationBuilder.CreateIndex(
                 name: "ix_message_reactions_is_removed",
@@ -176,7 +136,8 @@ namespace MessagingService.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_messages_channel_created_deleted",
                 table: "messages",
-                columns: new[] { "channel_id", "created_at", "is_deleted" });
+                columns: new[] { "channel_id", "created_at", "is_deleted" })
+                .Annotation("Npgsql:IndexInclude", new[] { "id" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_messages_channel_id",
@@ -207,9 +168,6 @@ namespace MessagingService.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "message_attachments");
-
             migrationBuilder.DropTable(
                 name: "message_reactions");
 
