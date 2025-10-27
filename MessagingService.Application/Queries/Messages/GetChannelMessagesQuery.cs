@@ -86,7 +86,7 @@ namespace MessagingService.Application.Queries.Messages
                     IsDeleted = m.IsDeleted,
                     CreatedAt = m.CreatedAt,
                     ReactionCount = m.Reactions.Count(r => !r.IsRemoved),
-                    AttachmentCount = m.Attachments.Count
+                    AttachmentCount = m.AttachmentFields.Count
                 })
                 .ToListAsync(cancellationToken);
 

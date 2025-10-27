@@ -111,7 +111,7 @@ namespace MessagingService.Infrastructure.Configurations
 
 
             builder.Metadata
-                .FindNavigation(nameof(Message.Attachments))!
+                .FindNavigation(nameof(Message.AttachmentFields))!
                 .SetPropertyAccessMode(PropertyAccessMode.Field);
 
 
@@ -130,12 +130,6 @@ namespace MessagingService.Infrastructure.Configurations
             builder.HasMany(e => e.Reactions)
                 .WithOne(r => r.Message)
                 .HasForeignKey(r => r.MessageId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-
-            builder.HasMany(e => e.Attachments)
-                .WithOne(a => a.Message)
-                .HasForeignKey(a => a.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
 

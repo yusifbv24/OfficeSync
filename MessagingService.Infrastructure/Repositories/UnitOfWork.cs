@@ -13,14 +13,12 @@ namespace MessagingService.Infrastructure.Repositories
 
         public IRepository<Message> Messages { get; }
         public IRepository<MessageReaction> Reactions { get; }
-        public IRepository<MessageAttachment> Attachments { get; }
 
         public UnitOfWork(MessagingDbContext context)
         {
             _context = context;
             Messages= new Repository<Message>(context);
             Reactions= new Repository<MessageReaction>(context);
-            Attachments= new Repository<MessageAttachment>(context);
         }
 
 

@@ -12,7 +12,6 @@ namespace MessagingService.Infrastructure.Data
         }
         public DbSet<Message> Messages => Set<Message>();
         public DbSet<MessageReaction> Reactions => Set<MessageReaction>();
-        public DbSet<MessageAttachment> Attachments => Set<MessageAttachment>();
         public DbSet<MessageReadReceipt> ReadReceipt => Set<MessageReadReceipt>(); 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -21,7 +20,6 @@ namespace MessagingService.Infrastructure.Data
 
             modelBuilder.ApplyConfiguration(new MessageConfiguration());
             modelBuilder.ApplyConfiguration(new MessageReactionConfiguration());
-            modelBuilder.ApplyConfiguration(new MessageAttachmentConfiguration());
             modelBuilder.ApplyConfiguration(new MessageReadReceiptConfiguration());
         }
     }

@@ -10,7 +10,6 @@ namespace MessagingService.Domain.Events
         public Guid MessageId { get; }
         public Guid ChannelId { get; }
         public Guid UserId { get; }
-        public string Emoji { get; }
         public ReactionRemovedEvent(Guid messageId,Guid channelId,Guid userId)
         {
             MessageId = messageId;

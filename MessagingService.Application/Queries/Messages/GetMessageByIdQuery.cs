@@ -50,7 +50,7 @@ namespace MessagingService.Application.Queries.Messages
                 request.MessageId,
                 cancellationToken,
                 m => m.Reactions,
-                m => m.Attachments,
+                m => m.AttachmentFields,
                 m => m.ReadReceipts);
 
             if (message == null)

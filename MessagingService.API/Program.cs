@@ -136,7 +136,6 @@ try
 
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddHttpClient<IChannelServiceClient, ChannelServiceClient>();
-    builder.Services.AddHttpClient<IFileServiceClient, FileServiceClient>();
     builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>();
 
     builder.Services.AddCors(options =>

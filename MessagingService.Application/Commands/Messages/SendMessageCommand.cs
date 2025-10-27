@@ -20,7 +20,9 @@ namespace MessagingService.Application.Commands.Messages
         Guid SenderId,
         string Content,
         MessageType Type=MessageType.Text,
-        Guid? ParentMessageId=null):IRequest<Result<MessageDto>>;
+        Guid? ParentMessageId=null,
+        List<Guid>? AttachmentFileIds=null
+        ):IRequest<Result<MessageDto>>;
 
 
     public class SendMessageCommandValidator : AbstractValidator<SendMessageCommand>
@@ -36,6 +38,13 @@ namespace MessagingService.Application.Commands.Messages
                 .MaximumLength(4000).WithMessage("Message content cannot exceed 4000 characters");
             RuleFor(x => x.Type)
                 .IsInEnum().WithMessage("Invalid message type");
+
+            // Validate file IDs if provided
+            RuleFor(x => x.AttachmentFileIds)
+                .Must(ids => ids == null || ids.All(id => id != Guid.Empty))
+                .WithMessage("All file IDs must be valid")
+                .Must(ids => ids == null || ids.Count <= 10)
+                .WithMessage("Maximum 10 files per message");
         }
     }
 
@@ -94,6 +103,7 @@ namespace MessagingService.Application.Commands.Messages
                     }
                 }
 
+
                 // Create value object with validation
                 var content = MessageContent.Create(request.Content);
 
@@ -103,17 +113,20 @@ namespace MessagingService.Application.Commands.Messages
                     senderId: request.SenderId,
                     content: content,
                     type: request.Type,
-                    parentMessageId: request.ParentMessageId);
+                    parentMessageId: request.ParentMessageId,
+                    attachmentFileIds: request.AttachmentFileIds);
 
                 // Persist to a database
                 await _unitOfWork.Messages.AddAsync(message, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+
                 _logger?.LogInformation(
-                    "Message {MessageId} sent to channel {ChannelId} by user {SenderId}",
+                    "Message {MessageId} sent to channel {ChannelId} by user {SenderId} with {FileCount} attachments",
                     message.Id,
                     request.ChannelId,
-                    request.SenderId);
+                    request.SenderId,
+                    message.GetAttachmentCount());
 
                 // Get sender name for the DTO
                 var senderName = await GetUserDisplayNameAsync(request.SenderId, cancellationToken);
@@ -121,6 +134,7 @@ namespace MessagingService.Application.Commands.Messages
                 // Map to DTO
                 var dto = _mapper.Map<MessageDto>(message);
                 dto=dto with { SenderName=senderName };
+
                 return Result<MessageDto>.Success(dto, "Message sent succesfully");
             }
             catch (ArgumentException ex)

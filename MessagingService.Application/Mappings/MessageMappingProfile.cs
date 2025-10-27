@@ -13,16 +13,14 @@ namespace MessagingService.Application.Mappings
             CreateMap<Message, MessageDto>()
                 .ForMember(dest => dest.SenderName, opt => opt.Ignore()) // Set manually in handlers
                 .ForMember(dest => dest.Reactions, opt => opt.MapFrom(src => MapReactionsGrouped(src.Reactions)))
-                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.Attachments));
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.AttachmentFields));
 
             CreateMap<Message, MessageListDto>()
                 .ForMember(dest => dest.SenderName, opt => opt.Ignore())
                 .ForMember(dest => dest.ReactionCount,
                     opt => opt.MapFrom(src => src.Reactions.Count(r => !r.IsRemoved)))
                 .ForMember(dest => dest.AttachmentCount,
-                    opt => opt.MapFrom(src => src.Attachments.Count));
-
-            CreateMap<MessageAttachment, MessageAttachmentDto>();
+                    opt => opt.MapFrom(src => src.AttachmentFields));
         }
 
         /// <summary>

@@ -15,8 +15,11 @@ namespace MessagingService.Domain.Entities
         // Using private fields with backing collections for true encapsulation
         private readonly List<DomainEvent> _domainEvents = [];
         private readonly List<MessageReaction> _reactions = [];
-        private readonly List<MessageAttachment> _attachments = [];
         private readonly List<MessageReadReceipt> _readReceipts = [];
+
+        // Simple list of FileIds that reference files in File Service
+        // This is stored as JSON in database or in a separate simple table
+        private readonly List<Guid> _attachmentFileIds = [];
 
         // Private setters prevent external modification - all changes must go through methods
         public Guid ChannelId { get; private set; }
@@ -38,10 +41,9 @@ namespace MessagingService.Domain.Entities
 
         // Read-only collections prevent external modification of relationships
         public IReadOnlyCollection<MessageReaction> Reactions=>_reactions.AsReadOnly();
-        public IReadOnlyCollection<MessageAttachment> Attachments=>_attachments.AsReadOnly();
         public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
         public IReadOnlyCollection<MessageReadReceipt> ReadReceipts=>_readReceipts.AsReadOnly();
-
+        public IReadOnlyCollection<Guid> AttachmentFields=>_attachmentFileIds.AsReadOnly();
 
         // Private constructor for EF Core - prevents direct instantiation
         private Message() { }
@@ -55,8 +57,9 @@ namespace MessagingService.Domain.Entities
             Guid channelId,
             Guid senderId,
             MessageContent content,
-            MessageType type=MessageType.Text,
-            Guid? parentMessageId = null)
+            MessageType type = MessageType.Text,
+            Guid? parentMessageId = null,
+            List<Guid>? attachmentFileIds = null)
         {
             var message = new Message
             {
@@ -68,6 +71,21 @@ namespace MessagingService.Domain.Entities
                 IsDeleted = false,
                 ParrentMessageId = parentMessageId
             };
+
+            // Add file references if provided
+            if(attachmentFileIds!=null && attachmentFileIds.Any())
+            {
+                foreach(var fileId in attachmentFileIds)
+                {
+                    message._attachmentFileIds.Add(fileId);
+                }
+
+                if(message.Type==MessageType.Text && attachmentFileIds.Any())
+                {
+                    message.Type = MessageType.File;
+                }
+            }
+
 
             // Raise domain event for other services to react to
             message.AddDomainEvent(new MessageSentEvent(
@@ -207,24 +225,75 @@ namespace MessagingService.Domain.Entities
 
 
         /// <summary>
-        /// Add an attachment to the message.
-        /// Business rule: Cannot add attachments to deleted messages.
+        /// Add a file reference to this message.
+        /// 
+        /// IMPORTANT: This only stores the FileId reference.
+        /// The actual file must already exist in File Service.
+        /// The caller is responsible for validating the file exists and is accessible.
+        /// 
+        /// Business rules:
+        /// - Cannot add files to deleted messages
+        /// - File Service should have already validated file upload and permissions
+        /// - We're just storing the reference here
         /// </summary>
-        public void AddAttachment(Guid fileId,string fileName,string fileUrl,long fileSize,string mimeType)
+        public void AddFileReference(Guid fileId)
         {
-            if(IsDeleted)
-                throw new InvalidOperationException("Cannot add attachments to deleted messages");
+            if (IsDeleted)
+                throw new InvalidOperationException("Cannot add files to deleted messages");
 
-            var attachment=MessageAttachment.Create(Id,fileId,fileName,fileUrl,fileSize,mimeType);
-            _attachments.Add(attachment);
+            if (fileId == Guid.Empty)
+                throw new ArgumentException("FileId cannot be empty");
 
-            // Update message type if this is the first attachment
-            if (Type == MessageType.Text)
+            // Prevent duplicate file references
+            if (_attachmentFileIds.Contains(fileId))
+                throw new InvalidOperationException("File is already attached to this message");
+
+            _attachmentFileIds.Add(fileId);
+
+            // Update message type if needed
+            if (Type == MessageType.Text && _attachmentFileIds.Any())
             {
-                Type = mimeType.StartsWith("image/") ? MessageType.Image : MessageType.File;
+                Type = MessageType.File;
             }
 
             UpdateTimestamp();
+        }
+
+
+
+
+        /// <summary>
+        /// Remove a file reference from this message.
+        /// 
+        /// IMPORTANT: This only removes the reference.
+        /// The actual file in File Service is not deleted - that's File Service's responsibility.
+        /// If you want to delete the file itself, call File Service separately.
+        /// </summary>
+        public void RemoveFileReference(Guid fileId)
+        {
+            if (!_attachmentFileIds.Contains(fileId))
+                throw new InvalidOperationException("File is not attached to this message");
+
+            _attachmentFileIds.Remove(fileId);
+            UpdateTimestamp();
+        }
+
+
+
+        /// <summary>
+        /// Check if a specific file is attached to this message.
+        /// </summary>
+        public bool HasFileAttached(Guid fileId)
+        {
+            return _attachmentFileIds.Contains(fileId);
+        }
+
+        /// <summary>
+        /// Get the count of attached files.
+        /// </summary>
+        public int GetAttachmentCount()
+        {
+            return _attachmentFileIds.Count;
         }
 
 
@@ -255,6 +324,8 @@ namespace MessagingService.Domain.Entities
             }
             UpdateTimestamp();
         }
+
+
 
 
 

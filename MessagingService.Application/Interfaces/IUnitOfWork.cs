@@ -7,7 +7,6 @@ namespace MessagingService.Application.Interfaces
     {
         IRepository<Message> Messages { get; }
         IRepository<MessageReaction> Reactions { get; }
-        IRepository<MessageAttachment> Attachments { get; }
         DbContext GetContext();
         Task<int> SaveChangesAsync(CancellationToken cancellationToken=default);
         Task BeginTransactionAsync(CancellationToken cancellationToken = default);

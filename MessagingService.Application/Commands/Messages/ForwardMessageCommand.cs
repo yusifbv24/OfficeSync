@@ -56,7 +56,7 @@ namespace MessagingService.Application.Commands.Messages
                 var originalMessage = await _unitOfWork.Messages.GetByIdWithIncludesAsync(
                     request.OriginalMessageId,
                     cancellationToken,
-                    m => m.Attachments);
+                    m => m.AttachmentFields);
 
                 if (originalMessage == null)
                 {
@@ -88,17 +88,6 @@ namespace MessagingService.Application.Commands.Messages
                     senderId: request.ForwardedBy,
                     content: messageContent,
                     type: originalMessage.Type);
-
-                // Copy attachments if any
-                foreach(var attachment in originalMessage.Attachments)
-                {
-                    forwardedMessage.AddAttachment(
-                        fileId: attachment.FileId,
-                        fileName: attachment.FileName,
-                        fileUrl: attachment.FileUrl,
-                        fileSize: attachment.FileSize,
-                        mimeType: attachment.MimeType);
-                }
 
                 await _unitOfWork.Messages.AddAsync(forwardedMessage, cancellationToken);
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
